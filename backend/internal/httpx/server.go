@@ -28,6 +28,7 @@ import (
 	"phsar/internal/i18n"
 	"phsar/internal/seller"
 	"phsar/internal/storage"
+	"phsar/internal/webui"
 )
 
 func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc *auth.Service) http.Handler {
@@ -71,9 +72,17 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 		r.Mount("/", seller.NewHandler(sellers, uploader, log).Routes())
 	})
 	r.Route("/admin", func(r chi.Router) {
-		// Sementara admin memakai token login app; login admin terpisah + MFA menyusul.
+		// Login admin web lewat Telegram/SMS (MFA menyusul). Token app juga diterima sementara.
+		r.Mount("/auth", authSvc.CookieRoutes("admin", "phsar_admin", "/admin/auth"))
 		r.With(authSvc.RequireUser("admin", "app")).Mount("/api", admin.NewHandler(pool, sellers, files, log).Routes())
-		r.Get("/*", notYet)
+		r.Get("/", webui.AdminPage)
+	})
+
+	// Seller Center web
+	r.Handle("/ui/*", webui.Assets())
+	r.Route("/seller", func(r chi.Router) {
+		r.Mount("/auth", authSvc.CookieRoutes("seller_web", "phsar_seller", "/seller/auth"))
+		r.Get("/", webui.SellerPage)
 	})
 	r.Route("/webhooks", func(r chi.Router) {
 		r.Post("/telegram/{key}", authSvc.TelegramWebhook)

@@ -430,10 +430,14 @@ func (s *Service) PutKYC(ctx context.Context, storeID, userID string, in KYCInpu
 	if l := len([]rune(in.LegalName)); l < 3 || l > 120 {
 		return nil, invalid("legal_name", "3–120 karakter, sesuai dokumen identitas")
 	}
-	if in.IDDocumentKey == "" {
-		return nil, invalid("id_document_key", "upload foto KTP/paspor dulu (kind=kyc_document)")
-	}
-	if err := storage.CheckOwner(ctx, s.pool, in.IDDocumentKey, userID, "kyc_document"); err != nil {
+	if in.IDDocumentKey == "" { // tidak upload ulang → pakai dokumen yang sudah ada
+		var existing *string
+		_ = s.pool.QueryRow(ctx, `SELECT id_document_key FROM seller_tax_profiles WHERE store_id = $1`, storeID).Scan(&existing)
+		if existing == nil || *existing == "" {
+			return nil, invalid("id_document_key", "upload foto KTP/paspor dulu (kind=kyc_document)")
+		}
+		in.IDDocumentKey = *existing
+	} else if err := storage.CheckOwner(ctx, s.pool, in.IDDocumentKey, userID, "kyc_document"); err != nil {
 		return nil, err
 	}
 	if in.SellerType == "company" && strings.TrimSpace(in.TIN) == "" {
