@@ -51,8 +51,70 @@ paths:
       summary: Pohon kategori dalam bahasa request
       responses:
         "200": { description: OK }
+  /v1/app/auth/otp/request:
+    post:
+      summary: Kirim kode SMS 6 digit (dev: kode ditulis ke log server)
+      requestBody: { content: { application/json: { schema: { type: object, properties: { phone: { type: string, example: "012 345 678" } } } } } }
+      responses:
+        "200": { description: "{phone, expires_in, resend_after}" }
+        "429": { description: otp_too_soon / otp_rate_limited }
+  /v1/app/auth/otp/verify:
+    post:
+      summary: Verifikasi kode → sesi (user baru dibuat otomatis)
+      requestBody: { content: { application/json: { schema: { type: object, properties: { phone: { type: string }, code: { type: string }, device_name: { type: string } } } } } }
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/TokenPair" } } } }
+        "401": { description: otp_invalid / otp_exhausted }
+  /v1/app/auth/telegram/start:
+    post:
+      summary: Mulai login Telegram → buka deep_link / app_link, lalu polling
+      responses:
+        "200": { description: "{request_id, poll_token, deep_link, app_link, expires_at}" }
+  /v1/app/auth/telegram/poll:
+    post:
+      summary: "Polling tiap 1–2 detik: status pending · ok (berisi tokens) · expired"
+      requestBody: { content: { application/json: { schema: { type: object, properties: { request_id: { type: string }, poll_token: { type: string } } } } } }
+      responses:
+        "200": { description: "{status, tokens?}" }
+  /v1/app/auth/refresh:
+    post:
+      summary: Tukar refresh token (dirotasi; token lama langsung mati)
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/TokenPair" } } } }
+        "401": { description: session_invalid }
+  /v1/app/auth/logout:
+    post:
+      summary: Cabut sesi perangkat ini
+      responses:
+        "204": { description: OK }
+  /v1/app/me:
+    get:
+      summary: User yang sedang login (Authorization Bearer access_token)
+      security: [{ bearer: [] }]
+      responses:
+        "200": { content: { application/json: { schema: { $ref: "#/components/schemas/User" } } } }
+        "401": { description: token_expired → panggil /auth/refresh · session_invalid → login ulang }
 components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer, bearerFormat: JWT }
   schemas:
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        phone: { type: string }
+        language: { type: string, enum: [en, km, zh] }
+        is_new: { type: boolean, description: "true = tampilkan onboarding/tour" }
+        has_store: { type: boolean, description: "true = tampilkan tombol mode seller" }
+    TokenPair:
+      type: object
+      properties:
+        access_token: { type: string }
+        access_expires_at: { type: string, format: date-time }
+        refresh_token: { type: string }
+        refresh_expires_at: { type: string, format: date-time }
+        user: { $ref: "#/components/schemas/User" }
     Meta:
       type: object
       properties:

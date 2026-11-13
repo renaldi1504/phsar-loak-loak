@@ -14,6 +14,14 @@ type Config struct {
 	DatabaseURL   string
 	DefaultLang   string
 	LogLevel      string
+
+	// Login
+	JWTSecret           string // minimal 32 karakter
+	TelegramBotToken    string // dari @BotFather; kosong = login Telegram nonaktif
+	TelegramBotUsername string // tanpa @, mis. phsar_login_bot
+	TelegramMode        string // polling (lokal) · webhook (server) · off
+	TelegramWebhookKey  string // bagian rahasia di URL /webhooks/telegram/<key>
+	SMSProvider         string // log (pengembangan: kode OTP ditulis ke log) · nanti provider sungguhan
 }
 
 func Load() (Config, error) {
@@ -24,9 +32,30 @@ func Load() (Config, error) {
 		DatabaseURL:   os.Getenv("DATABASE_URL"),
 		DefaultLang:   get("DEFAULT_LANG", "en"),
 		LogLevel:      get("LOG_LEVEL", "info"),
+
+		JWTSecret:           os.Getenv("JWT_SECRET"),
+		TelegramBotToken:    os.Getenv("TELEGRAM_BOT_TOKEN"),
+		TelegramBotUsername: strings.TrimPrefix(os.Getenv("TELEGRAM_BOT_USERNAME"), "@"),
+		TelegramMode:        get("TELEGRAM_MODE", "polling"),
+		TelegramWebhookKey:  os.Getenv("TELEGRAM_WEBHOOK_KEY"),
+		SMSProvider:         get("SMS_PROVIDER", "log"),
 	}
 	if c.DatabaseURL == "" {
 		return c, fmt.Errorf("DATABASE_URL belum diisi (lihat .env.example)")
+	}
+	if len(c.JWTSecret) < 32 {
+		if c.Env != "development" {
+			return c, fmt.Errorf("JWT_SECRET wajib diisi (minimal 32 karakter)")
+		}
+		c.JWTSecret = "dev-only-insecure-secret-change-me-0123456789"
+	}
+	if c.TelegramBotToken == "" {
+		c.TelegramMode = "off"
+	} else if c.TelegramBotUsername == "" {
+		return c, fmt.Errorf("TELEGRAM_BOT_USERNAME wajib diisi kalau TELEGRAM_BOT_TOKEN diisi")
+	}
+	if c.Env == "production" && c.SMSProvider == "log" {
+		return c, fmt.Errorf("SMS_PROVIDER=log tidak boleh dipakai di production")
 	}
 	switch c.DefaultLang {
 	case "en", "km", "zh":

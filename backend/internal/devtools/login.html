@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Phsar · dev login</title>
+<style>
+  body{margin:0;font-family:-apple-system,system-ui,sans-serif;background:#f7f5f8;color:#102241}
+  main{max-width:420px;margin:40px auto;padding:24px;background:#fff;border:1px solid #eeeef2;border-radius:24px;display:flex;flex-direction:column;gap:14px}
+  h1{margin:0;font-size:24px}
+  p{margin:0;color:#7c8291;font-size:14px}
+  button{min-height:48px;border-radius:999px;border:0;font:inherit;font-weight:700;cursor:pointer}
+  .tg{background:#229ED9;color:#fff}.pk{background:#f50750;color:#fff}
+  input{min-height:44px;border-radius:16px;border:1px solid #e6e1e8;padding:0 14px;font:inherit}
+  pre{background:#f7f7fa;border-radius:16px;padding:12px;font-size:12px;white-space:pre-wrap;word-break:break-all;margin:0}
+  hr{border:0;border-top:1px solid #eeeef2;width:100%}
+</style>
+</head>
+<body>
+<main>
+  <h1>Phsar dev login</h1>
+  <p>Halaman ini hanya ada saat APP_ENV=development, untuk mencoba login sebelum app Flutter jadi.</p>
+  <button class="tg" id="tg">Continue with Telegram</button>
+  <hr>
+  <label for="phone">Nomor HP</label>
+  <input id="phone" placeholder="012 345 678">
+  <button class="pk" id="send">Kirim kode SMS</button>
+  <input id="code" placeholder="Kode 6 digit (lihat log server)">
+  <button class="pk" id="verify">Verifikasi</button>
+  <pre id="out">…</pre>
+</main>
+<script>
+const out = (v) => document.getElementById('out').textContent = typeof v === 'string' ? v : JSON.stringify(v, null, 2);
+const post = (path, body) => fetch('/v1/app/auth' + path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)}).then(r => r.json());
+async function me(tokens) {
+  const r = await fetch('/v1/app/me', {headers: {Authorization: 'Bearer ' + tokens.access_token}});
+  out({login: 'berhasil', me: await r.json(), tokens});
+}
+document.getElementById('tg').onclick = async () => {
+  const s = await post('/telegram/start', {device_name: 'dev browser'});
+  if (s.error) return out(s);
+  window.open(s.deep_link, '_blank');
+  out('Menunggu kamu menekan Start di Telegram…');
+  const t = setInterval(async () => {
+    const p = await post('/telegram/poll', {request_id: s.request_id, poll_token: s.poll_token});
+    if (p.status === 'pending') return;
+    clearInterval(t);
+    p.status === 'ok' ? me(p.tokens) : out(p);
+  }, 1500);
+};
+document.getElementById('send').onclick = async () => out(await post('/otp/request', {phone: document.getElementById('phone').value}));
+document.getElementById('verify').onclick = async () => {
+  const r = await post('/otp/verify', {phone: document.getElementById('phone').value, code: document.getElementById('code').value, device_name: 'dev browser'});
+  r.error ? out(r) : me(r);
+};
+</script>
+</body>
+</html>

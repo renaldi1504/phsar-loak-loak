@@ -37,6 +37,18 @@ curl "localhost:8080/v1/app/service-areas/check?lat=10.627&lng=103.522"   # di S
 curl "localhost:8080/v1/app/categories?lang=zh"
 ```
 
+## Mencoba login (tanpa app)
+
+Isi `.env`: `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` (tanpa @), `TELEGRAM_MODE=polling`, `JWT_SECRET`.
+Jalankan `make migrate-up run`, lalu buka **http://localhost:8080/dev/login**:
+
+- **Continue with Telegram** → Telegram terbuka → tekan **Start** di bot → halaman otomatis menampilkan user & token.
+- **SMS** → kode OTP muncul di log Terminal server (`SMS_PROVIDER=log`), karena SMS sungguhan belum dipasang.
+
+Alur Telegram: app `POST /v1/app/auth/telegram/start` → buka `deep_link` → bot menerima `/start login_<nonce>`
+→ app `POST /telegram/poll` sampai `status: ok`. Di server pakai `TELEGRAM_MODE=webhook` +
+`setWebhook` ke `https://<domain>/webhooks/telegram/<TELEGRAM_WEBHOOK_KEY>`.
+
 ## Aturan yang sudah dipasang di database
 
 - **Uang**: `NUMERIC(12,2)` USD, dihitung dengan `shopspring/decimal`, pembulatan biasa (12.5960 → 12.60).
@@ -55,7 +67,7 @@ curl "localhost:8080/v1/app/categories?lang=zh"
 ## Tahapan
 
 0. ✅ Fondasi: repo, migrasi Tahap 0–1, health, meta, cek wilayah, kategori, CI
-1. Rekrut seller: login Telegram/Facebook/SMS, Seller Center (daftar toko, KYC, titik penjemputan, tambah produk +
+1. Rekrut seller: ✅ login Telegram (deep link bot) + SMS OTP + sesi per perangkat · ⏳ Facebook/Apple, Seller Center (daftar toko, KYC, titik penjemputan, tambah produk +
    terjemahan AI), admin (verifikasi seller & titik, moderasi produk, audit)
 2. Pembeli melihat: website customer (SSR + SEO) + app Flutter (feed, cari, produk)
 3. Pembeli membeli: keranjang, checkout Sihanoukville, KHQR/ABA PayWay, ledger

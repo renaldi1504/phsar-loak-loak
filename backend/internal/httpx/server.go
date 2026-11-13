@@ -18,13 +18,15 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"phsar/internal/auth"
 	"phsar/internal/catalogmeta"
 	"phsar/internal/config"
+	"phsar/internal/devtools"
 	"phsar/internal/health"
 	"phsar/internal/i18n"
 )
 
-func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) http.Handler {
+func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc *auth.Service) http.Handler {
 	r := chi.NewRouter()
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
@@ -32,6 +34,10 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) http.Han
 	r.Use(middleware.Recoverer)
 	r.Use(middleware.Timeout(30 * time.Second))
 	r.Use(i18n.Middleware(i18n.Lang(cfg.DefaultLang)))
+
+	if cfg.Env == "development" {
+		r.Get("/dev/login", devtools.Login)
+	}
 
 	h := health.New(pool)
 	r.Get("/healthz", h.Live)
@@ -42,6 +48,11 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) http.Han
 		r.Get("/meta", meta.Meta)
 		r.Get("/service-areas/check", meta.CheckPoint)
 		r.Get("/categories", meta.Categories)
+		r.Mount("/auth", authSvc.Routes("app"))
+		r.Group(func(r chi.Router) {
+			r.Use(authSvc.RequireUser("app"))
+			r.Get("/me", authSvc.HandleMe)
+		})
 	})
 	r.Route("/v1/seller", func(r chi.Router) {
 		r.Get("/*", notYet)
@@ -50,6 +61,7 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) http.Han
 		r.Get("/*", notYet)
 	})
 	r.Route("/webhooks", func(r chi.Router) {
+		r.Post("/telegram/{key}", authSvc.TelegramWebhook)
 		r.Post("/*", notYet)
 	})
 
@@ -64,9 +76,13 @@ func notYet(w http.ResponseWriter, _ *http.Request) {
 }
 
 func Serve(ctx context.Context, cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) error {
+	authSvc := auth.NewService(pool, cfg, log)
+	if cfg.TelegramMode == "polling" {
+		go authSvc.RunTelegramPolling(ctx)
+	}
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
-		Handler:           NewRouter(cfg, log, pool),
+		Handler:           NewRouter(cfg, log, pool, authSvc),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)
