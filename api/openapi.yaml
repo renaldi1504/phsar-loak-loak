@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: Phsar API
+  version: 0.1.0
+  description: |
+    Satu backend untuk app Flutter (pembeli + mode seller), Seller Center, admin, dan webhook.
+    Bahasa respons: query `lang`, header `X-Lang`, atau `Accept-Language` (en default, km, zh).
+    File ini sumber untuk membuat client Dart (openapi-generator) di folder app/.
+servers:
+  - url: http://localhost:8080
+paths:
+  /healthz:
+    get:
+      summary: Proses hidup
+      responses:
+        "200": { description: OK }
+  /readyz:
+    get:
+      summary: Database bisa dijangkau
+      responses:
+        "200": { description: Ready }
+        "503": { description: Database tidak terjangkau }
+  /v1/app/meta:
+    get:
+      summary: Bahasa, mata uang, kurs tampilan riel, wilayah layanan aktif
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Meta" }
+  /v1/app/service-areas/check:
+    get:
+      summary: Cek apakah titik peta berada di wilayah layanan (checkout & titik penjemputan)
+      parameters:
+        - { name: lat, in: query, required: true, schema: { type: number } }
+        - { name: lng, in: query, required: true, schema: { type: number } }
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  served: { type: boolean }
+                  service_area: { type: string }
+                  message: { type: string }
+  /v1/app/categories:
+    get:
+      summary: Pohon kategori dalam bahasa request
+      responses:
+        "200": { description: OK }
+components:
+  schemas:
+    Meta:
+      type: object
+      properties:
+        languages: { type: array, items: { type: string, enum: [en, km, zh] } }
+        lang: { type: string }
+        currency: { type: string, example: USD }
+        riel_per_usd: { type: string, example: "4000.0000" }
+        cash_on_delivery: { type: boolean }
+        service_areas:
+          type: array
+          items:
+            type: object
+            properties:
+              code: { type: string, example: sihanoukville }
+              name: { type: string }
+              fee_per_store: { type: string, example: "0.00" }
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: { type: string }
+            message: { type: string }

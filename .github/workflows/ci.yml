@@ -1,0 +1,39 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: phsar
+          POSTGRES_PASSWORD: phsar
+          POSTGRES_DB: phsar
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U phsar"
+          --health-interval 5s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgres://phsar:phsar@localhost:5432/phsar?sslmode=disable
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: backend/go.mod
+          cache-dependency-path: backend/go.sum
+      - run: go vet ./...
+      - run: go test ./...
+      - name: Migrasi naik, turun, naik lagi
+        run: |
+          go run ./cmd/phsar migrate up
+          go run ./cmd/phsar migrate reset
+          go run ./cmd/phsar migrate up

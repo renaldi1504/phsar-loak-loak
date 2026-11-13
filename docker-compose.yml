@@ -1,0 +1,35 @@
+# Lingkungan lokal: Postgres 16 + pgvector, dan backend Go.
+# Jalankan: docker compose up -d db  lalu  make -C backend migrate-up run
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: phsar
+      POSTGRES_PASSWORD: phsar
+      POSTGRES_DB: phsar
+      TZ: Asia/Phnom_Penh
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U phsar -d phsar"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  backend:
+    build: ./backend
+    command: ["serve"]
+    env_file: .env
+    environment:
+      DATABASE_URL: postgres://phsar:phsar@db:5432/phsar?sslmode=disable
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    profiles: ["full"]
+
+volumes:
+  pgdata:

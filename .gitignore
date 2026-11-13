@@ -1,0 +1,27 @@
+# Go
+/backend/bin/
+*.test
+*.out
+coverage.*
+
+# Env & secrets
+.env
+.env.*
+!.env.example
+
+# Flutter
+/app/.dart_tool/
+/app/build/
+/app/.flutter-plugins*
+/app/ios/Pods/
+/app/android/.gradle/
+/app/android/local.properties
+
+# Python (embedder)
+/embedder/.venv/
+__pycache__/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
