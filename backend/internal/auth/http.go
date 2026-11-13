@@ -46,7 +46,8 @@ func (s *Service) TelegramWebhook(w http.ResponseWriter, r *http.Request) {
 type ctxKey struct{}
 
 // RequireUser memeriksa header Authorization: Bearer <access_token>.
-func (s *Service) RequireUser(audience string) func(http.Handler) http.Handler {
+// audiences: token dari pintu mana yang diterima (mis. "app", "seller_web").
+func (s *Service) RequireUser(audiences ...string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			tok := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
@@ -54,7 +55,13 @@ func (s *Service) RequireUser(audience string) func(http.Handler) http.Handler {
 				writeErr(w, http.StatusUnauthorized, "unauthenticated", "login required")
 				return
 			}
-			c, err := s.Authenticate(r.Context(), tok, audience)
+			var c Claims
+			var err error
+			for _, aud := range audiences {
+				if c, err = s.Authenticate(r.Context(), tok, aud); !errors.Is(err, ErrTokenInvalid) {
+					break
+				}
+			}
 			if err != nil {
 				code := "token_invalid"
 				switch {

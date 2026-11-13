@@ -22,9 +22,13 @@ type Config struct {
 	TelegramMode        string // polling (lokal) · webhook (server) · off
 	TelegramWebhookKey  string // bagian rahasia di URL /webhooks/telegram/<key>
 	SMSProvider         string // log (pengembangan: kode OTP ditulis ke log) · nanti provider sungguhan
+
+	// File upload (sementara disk lokal; nanti Cloudflare R2)
+	StorageDir string
 }
 
 func Load() (Config, error) {
+	loadDotEnv(".env", "../.env")
 	c := Config{
 		Env:           get("APP_ENV", "development"),
 		HTTPAddr:      get("HTTP_ADDR", ":8080"),
@@ -39,6 +43,7 @@ func Load() (Config, error) {
 		TelegramMode:        get("TELEGRAM_MODE", "polling"),
 		TelegramWebhookKey:  os.Getenv("TELEGRAM_WEBHOOK_KEY"),
 		SMSProvider:         get("SMS_PROVIDER", "log"),
+		StorageDir:          get("STORAGE_DIR", "./data/uploads"),
 	}
 	if c.DatabaseURL == "" {
 		return c, fmt.Errorf("DATABASE_URL belum diisi (lihat .env.example)")
@@ -63,6 +68,33 @@ func Load() (Config, error) {
 		return c, fmt.Errorf("DEFAULT_LANG harus en, km, atau zh")
 	}
 	return c, nil
+}
+
+// loadDotEnv membaca file .env (folder sekarang atau folder induk) supaya `go run ./cmd/phsar ...`
+// langsung jalan tanpa make. Variabel yang sudah ada di environment tidak ditimpa.
+func loadDotEnv(paths ...string) {
+	for _, p := range paths {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			continue
+		}
+		for _, line := range strings.Split(string(b), "\n") {
+			line = strings.TrimSpace(line)
+			if line == "" || strings.HasPrefix(line, "#") {
+				continue
+			}
+			k, v, ok := strings.Cut(line, "=")
+			if !ok {
+				continue
+			}
+			k, v = strings.TrimSpace(strings.TrimPrefix(k, "export ")), strings.TrimSpace(v)
+			v = strings.Trim(v, `"'`)
+			if _, exists := os.LookupEnv(k); !exists {
+				os.Setenv(k, v)
+			}
+		}
+		return
+	}
 }
 
 func get(key, def string) string {

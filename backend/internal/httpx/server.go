@@ -12,18 +12,22 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"phsar/internal/admin"
 	"phsar/internal/auth"
 	"phsar/internal/catalogmeta"
 	"phsar/internal/config"
 	"phsar/internal/devtools"
 	"phsar/internal/health"
 	"phsar/internal/i18n"
+	"phsar/internal/seller"
+	"phsar/internal/storage"
 )
 
 func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc *auth.Service) http.Handler {
@@ -54,10 +58,21 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 			r.Get("/me", authSvc.HandleMe)
 		})
 	})
+	files := storage.Local{Dir: cfg.StorageDir, BaseURL: cfg.PublicBaseURL + "/media"}
+	uploader := storage.Uploader{Store: files, Pool: pool}
+	sellers := seller.NewService(pool, files)
+
+	// File publik (logo toko, foto titik penjemputan). File private/… tidak pernah disajikan di sini.
+	r.Handle("/media/public/*", http.StripPrefix("/media/public/",
+		http.FileServer(noDirListing{http.Dir(cfg.StorageDir + "/public")})))
+
 	r.Route("/v1/seller", func(r chi.Router) {
-		r.Get("/*", notYet)
+		r.Use(authSvc.RequireUser("app", "seller_web"))
+		r.Mount("/", seller.NewHandler(sellers, uploader, log).Routes())
 	})
 	r.Route("/admin", func(r chi.Router) {
+		// Sementara admin memakai token login app; login admin terpisah + MFA menyusul.
+		r.With(authSvc.RequireUser("admin", "app")).Mount("/api", admin.NewHandler(pool, sellers, files, log).Routes())
 		r.Get("/*", notYet)
 	})
 	r.Route("/webhooks", func(r chi.Router) {
@@ -69,6 +84,21 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 		Error(w, http.StatusNotFound, "not_found", "route not found")
 	})
 	return r
+}
+
+// noDirListing mencegah daftar isi folder ditampilkan.
+type noDirListing struct{ fs http.FileSystem }
+
+func (n noDirListing) Open(name string) (http.File, error) {
+	f, err := n.fs.Open(name)
+	if err != nil {
+		return nil, err
+	}
+	if st, err := f.Stat(); err == nil && st.IsDir() {
+		f.Close()
+		return nil, os.ErrNotExist
+	}
+	return f, nil
 }
 
 func notYet(w http.ResponseWriter, _ *http.Request) {
