@@ -42,8 +42,12 @@ async function render() {
     bindLogin(() => { location.hash = '#/'; render(); });
     return;
   }
-  const m = location.hash.match(/^#\/store\/([0-9a-f-]+)/);
-  try { if (m) await renderDetail(m[1]); else await renderQueue(); }
+  const m = location.hash.match(/^#\/store\/([0-9a-f-]+)/), pm = location.hash.match(/^#\/product\/([0-9a-f-]+)/);
+  try {
+    if (pm) await renderProductDetail(pm[1]);
+    else if (location.hash === '#/products') await renderProductQueue();
+    else if (m) await renderDetail(m[1]); else await renderQueue();
+  }
   catch (e) { $('#app').innerHTML = shell(`<div class="banner bad">${e.code === 'not_admin' ? t('notAdmin') : esc(errMsg(e))}</div>`); }
 }
 
@@ -52,7 +56,7 @@ async function renderQueue() {
   const rows = stores.map(s => `<tr><td><a href="#/store/${s.id}"><b>${esc(s.name)}</b></a><br><span class="muted">${esc(s.slug)}</span></td>
     <td>${esc(s.owner_name || '')} ${esc(s.owner_phone)}</td><td>${chip(kycCls(s.kyc), t('kyc_' + s.kyc))}</td><td>${s.pickup_points}</td>
     <td class="muted">${s.submitted_at ? new Date(s.submitted_at).toLocaleString() : '—'}</td></tr>`).join('');
-  $('#app').innerHTML = shell(`<h1>${t('queue')}</h1>
+  $('#app').innerHTML = shell(`${adminNav('stores')}<h1>${t('queue')}</h1>
     <div class="tabs">${['pending_review', 'onboarding', 'active'].map(f => `<button type="button" aria-selected="${A.filter === f}" onclick="A.filter='${f}';render()">${t('f_' + f)}</button>`).join('')}</div>
     <section class="card" style="overflow-x:auto">${stores.length ? `<table><thead><tr><th>${t('store')}</th><th>${t('owner')}</th><th>${t('kyc')}</th><th>${t('pickups')}</th><th>${t('submitted')}</th></tr></thead><tbody>${rows}</tbody></table>`
       : `<p class="muted">${t('empty')}</p>`}</section>`);
@@ -84,16 +88,12 @@ async function renderDetail(id) {
         <p>${esc(p.address_line)}</p><p class="muted">${t('contact')}: ${esc(p.contact_name)} · ${esc(p.contact_phone)}</p>
         <p class="muted">${t('hours')}: ${days.filter(x => p.pickup_hours[x]).map(x => `${x} ${p.pickup_hours[x].join('–')}`).join(' · ')}</p>
         ${p.note ? `<p class="muted">${esc(p.note)}</p>` : ''}${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="" style="max-width:240px;border-radius:16px">` : ''}
-        <a href="https://www.google.com/maps?q=${p.lat},${p.lng}" target="_blank" rel="noopener">${t('openMap')}</a>
+        <a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}${p.google_place_id ? '&query_place_id=' + encodeURIComponent(p.google_place_id) : ''}" target="_blank" rel="noopener">${t('openMap')}</a>
         ${p.rejection_note ? `<div class="banner bad">${esc(p.rejection_note)}</div>` : ''}${p.verified ? '' : decisionBox('pp_' + p.id)}</div>`).join('')}</section>
     ${pending ? `<section class="card"><h2>${t('storeDecision')}</h2><p class="muted">${t('storeHint')}</p>${decisionBox('store')}</section>` : ''}`);
 
-  if (d.pickup_points.length) {
-    A.map = L.map('amap');
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '© OpenStreetMap'}).addTo(A.map);
-    const pts = d.pickup_points.map(p => (L.marker([p.lat, p.lng]).addTo(A.map).bindPopup(esc(p.label)), [p.lat, p.lng]));
-    A.map.fitBounds(pts, {maxZoom: 17, padding: [30, 30]});
-  } else $('#amap').classList.add('hidden');
+  if (d.pickup_points.length) Maps.markers($('#amap'), d.pickup_points.map(p => ({lat: p.lat, lng: p.lng, label: p.label})));
+  else $('#amap').classList.add('hidden');
 
   if ($('#docBtn')) $('#docBtn').onclick = async () => {
     // Dokumen privat butuh token → ambil sebagai blob lalu buka di tab baru.

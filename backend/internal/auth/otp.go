@@ -31,6 +31,9 @@ type SMSSender interface {
 	Send(ctx context.Context, phone, text string) error
 }
 
+// SetSMSSender mengganti pengirim SMS (dipakai test QA untuk menangkap kode OTP; nanti provider sungguhan).
+func (s *Service) SetSMSSender(x SMSSender) { s.sms = x }
+
 // LogSMSSender: hanya untuk pengembangan — kode OTP ditulis ke log server.
 type LogSMSSender struct{ log *slog.Logger }
 
@@ -108,9 +111,11 @@ func (s *Service) VerifyOTP(ctx context.Context, rawPhone, code, audience, lang 
 			return ErrOTPExhausted
 		}
 		if subtle.ConstantTimeCompare([]byte(hash), []byte(s.otpHash(phone, code))) != 1 {
+			// Catat percobaan salah di transaksi yang sama (baris ini sedang dikunci FOR UPDATE), lalu commit.
+			// Dulu memakai s.pool di luar tx → menunggu kunci miliknya sendiri sampai timeout 30 detik.
 			failReason = "otp_wrong"
-			_, _ = s.pool.Exec(ctx, `UPDATE otp_codes SET attempts = attempts + 1 WHERE id = $1`, id) // di luar tx supaya tetap tercatat
-			return ErrOTPInvalid
+			_, err := tx.Exec(ctx, `UPDATE otp_codes SET attempts = attempts + 1 WHERE id = $1`, id)
+			return err
 		}
 		if _, err := tx.Exec(ctx, `UPDATE otp_codes SET used_at = now() WHERE id = $1`, id); err != nil {
 			return err
@@ -122,6 +127,9 @@ func (s *Service) VerifyOTP(ctx context.Context, rawPhone, code, audience, lang 
 		pair, err = s.issueSession(ctx, tx, userID, audience, created, c)
 		return err
 	})
+	if err == nil && failReason == "otp_wrong" {
+		err = ErrOTPInvalid
+	}
 	s.recordAttempt(ctx, phone, c, err == nil, failReason)
 	return pair, err
 }

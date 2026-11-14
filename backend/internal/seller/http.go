@@ -11,6 +11,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"phsar/internal/auth"
+	"phsar/internal/media"
 	"phsar/internal/storage"
 )
 
@@ -30,6 +31,8 @@ func (h *Handler) Routes() http.Handler {
 	r.Post("/uploads", h.upload)
 	r.Get("/stores", h.myStores)
 	r.Post("/stores", h.createStore)
+	r.Get("/invites/{token}", h.inviteDetails)
+	r.Post("/invites/{token}/accept", h.acceptInvite)
 	r.Route("/stores/{storeID}", func(r chi.Router) {
 		r.Use(h.member)
 		r.Get("/", h.getStore)
@@ -41,6 +44,22 @@ func (h *Handler) Routes() http.Handler {
 		r.With(ownerOnly).Post("/pickup-points", h.createPickup)
 		r.With(ownerOnly).Put("/pickup-points/{pointID}", h.updatePickup)
 		r.With(ownerOnly).Delete("/pickup-points/{pointID}", h.deletePickup)
+		// Produk: pemilik dan staf toko boleh mengelola.
+		r.Get("/products", h.listProducts)
+		r.Post("/products", h.createProduct)
+		r.Get("/products/{productID}", h.getProduct)
+		r.Put("/products/{productID}", h.updateProduct)
+		r.Delete("/products/{productID}", h.deleteProduct)
+		r.Patch("/products/{productID}/variants", h.updateStockPrice)
+		r.Post("/products/{productID}/status", h.setProductStatus)
+		r.Put("/products/{productID}/translations/{lang}", h.editTranslation)
+		r.Delete("/products/{productID}/translations/{lang}", h.resetTranslation)
+		r.Post("/products/{productID}/translations/retry", h.retryTranslation)
+		// Tim
+		r.With(ownerOnly).Get("/team", h.getTeam)
+		r.With(ownerOnly).Post("/invites", h.createInvite)
+		r.With(ownerOnly).Delete("/invites/{inviteID}", h.revokeInvite)
+		r.Delete("/members/{userID}", h.removeMember) // owner menghapus staf, atau staf keluar sendiri
 	})
 	return r
 }
@@ -76,7 +95,7 @@ func uid(r *http.Request) string {
 
 // POST /v1/seller/uploads  (multipart: kind, file)
 func (h *Handler) upload(w http.ResponseWriter, r *http.Request) {
-	r.Body = http.MaxBytesReader(w, r.Body, 11<<20)
+	r.Body = http.MaxBytesReader(w, r.Body, storage.MaxVideoBytes+(1<<20))
 	mr, err := r.MultipartReader()
 	if err != nil {
 		writeErr(w, http.StatusBadRequest, "bad_upload", "kirim multipart/form-data dengan field kind lalu file")
@@ -194,6 +213,122 @@ func (h *Handler) deletePickup(w http.ResponseWriter, r *http.Request) {
 	h.respond(w, http.StatusOK, map[string]any{"pickup_points": l}, err)
 }
 
+func (h *Handler) listProducts(w http.ResponseWriter, r *http.Request) {
+	l, err := h.svc.ListProducts(r.Context(), chi.URLParam(r, "storeID"), r.URL.Query().Get("filter"))
+	h.respond(w, http.StatusOK, map[string]any{"products": l}, err)
+}
+
+func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {
+	var in ProductInput
+	if !decode(w, r, &in) {
+		return
+	}
+	p, err := h.svc.CreateProduct(r.Context(), chi.URLParam(r, "storeID"), uid(r), in)
+	h.respond(w, http.StatusCreated, p, err)
+}
+
+func (h *Handler) getProduct(w http.ResponseWriter, r *http.Request) {
+	p, err := h.svc.GetProduct(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"))
+	h.respond(w, http.StatusOK, p, err)
+}
+
+func (h *Handler) updateProduct(w http.ResponseWriter, r *http.Request) {
+	var in ProductInput
+	if !decode(w, r, &in) {
+		return
+	}
+	p, err := h.svc.UpdateProduct(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"), uid(r), in)
+	h.respond(w, http.StatusOK, p, err)
+}
+
+func (h *Handler) deleteProduct(w http.ResponseWriter, r *http.Request) {
+	if err := h.svc.DeleteProduct(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"), uid(r)); err != nil {
+		h.fail(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) updateStockPrice(w http.ResponseWriter, r *http.Request) {
+	var in StockPriceInput
+	if !decode(w, r, &in) {
+		return
+	}
+	p, err := h.svc.UpdateStockPrice(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"), uid(r), in)
+	h.respond(w, http.StatusOK, p, err)
+}
+
+func (h *Handler) setProductStatus(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Status string `json:"status"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	p, err := h.svc.SetProductStatus(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"), uid(r), in.Status)
+	h.respond(w, http.StatusOK, p, err)
+}
+
+func (h *Handler) editTranslation(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		Name        string `json:"name"`
+		Description string `json:"description"`
+	}
+	if !decode(w, r, &in) {
+		return
+	}
+	p, err := h.svc.EditTranslation(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"), uid(r),
+		chi.URLParam(r, "lang"), in.Name, in.Description)
+	h.respond(w, http.StatusOK, p, err)
+}
+
+func (h *Handler) resetTranslation(w http.ResponseWriter, r *http.Request) {
+	p, err := h.svc.ResetTranslation(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"), uid(r), chi.URLParam(r, "lang"))
+	h.respond(w, http.StatusOK, p, err)
+}
+
+func (h *Handler) retryTranslation(w http.ResponseWriter, r *http.Request) {
+	p, err := h.svc.RetryTranslation(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "productID"), uid(r))
+	h.respond(w, http.StatusOK, p, err)
+}
+
+func (h *Handler) getTeam(w http.ResponseWriter, r *http.Request) {
+	t, err := h.svc.GetTeam(r.Context(), chi.URLParam(r, "storeID"))
+	h.respond(w, http.StatusOK, t, err)
+}
+
+func (h *Handler) createInvite(w http.ResponseWriter, r *http.Request) {
+	inv, err := h.svc.CreateInvite(r.Context(), chi.URLParam(r, "storeID"), uid(r))
+	h.respond(w, http.StatusCreated, inv, err)
+}
+
+func (h *Handler) revokeInvite(w http.ResponseWriter, r *http.Request) {
+	if err := h.svc.RevokeInvite(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "inviteID"), uid(r)); err != nil {
+		h.fail(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) removeMember(w http.ResponseWriter, r *http.Request) {
+	role, _ := r.Context().Value(roleKey{}).(string)
+	if err := h.svc.RemoveMember(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "userID"), uid(r), role); err != nil {
+		h.fail(w, err)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *Handler) inviteDetails(w http.ResponseWriter, r *http.Request) {
+	info, err := h.svc.InviteDetails(r.Context(), chi.URLParam(r, "token"), uid(r))
+	h.respond(w, http.StatusOK, info, err)
+}
+
+func (h *Handler) acceptInvite(w http.ResponseWriter, r *http.Request) {
+	storeID, err := h.svc.AcceptInvite(r.Context(), chi.URLParam(r, "token"), uid(r))
+	h.respond(w, http.StatusOK, map[string]string{"store_id": storeID}, err)
+}
+
 func (h *Handler) respond(w http.ResponseWriter, status int, v any, err error) {
 	if err != nil {
 		h.fail(w, err)
@@ -217,6 +352,20 @@ func (h *Handler) fail(w http.ResponseWriter, err error) {
 		writeErr(w, http.StatusConflict, "store_under_review", err.Error())
 	case errors.Is(err, ErrSlugTaken):
 		writeErr(w, http.StatusConflict, "slug_taken", err.Error())
+	case errors.Is(err, ErrStoreNotActive):
+		writeErr(w, http.StatusConflict, "store_not_active", err.Error())
+	case errors.Is(err, ErrProductBanned):
+		writeErr(w, http.StatusConflict, "product_banned", err.Error())
+	case errors.Is(err, media.ErrTooLong):
+		writeErr(w, http.StatusUnprocessableEntity, "video_too_long", err.Error())
+	case errors.Is(err, ErrInviteInvalid):
+		writeErr(w, http.StatusGone, "invite_invalid", err.Error())
+	case errors.Is(err, ErrTooManyStaff):
+		writeErr(w, http.StatusConflict, "too_many_staff", err.Error())
+	case errors.Is(err, ErrCannotRemove):
+		writeErr(w, http.StatusConflict, "cannot_remove_owner", err.Error())
+	case errors.Is(err, ErrOwnerOnly):
+		writeErr(w, http.StatusForbidden, "owner_only", err.Error())
 	case errors.Is(err, ErrTooManyStores):
 		writeErr(w, http.StatusConflict, "too_many_stores", err.Error())
 	case errors.Is(err, storage.ErrNotOwner):
@@ -232,7 +381,7 @@ func (h *Handler) fail(w http.ResponseWriter, err error) {
 }
 
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
-	dec := json.NewDecoder(io.LimitReader(r.Body, 64<<10))
+	dec := json.NewDecoder(io.LimitReader(r.Body, 256<<10))
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(v); err != nil {
 		writeErr(w, http.StatusBadRequest, "bad_json", err.Error())

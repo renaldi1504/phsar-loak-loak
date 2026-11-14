@@ -4,7 +4,7 @@
 //	phsar migrate up       jalankan migrasi database
 //	phsar migrate down     mundurkan satu migrasi
 //	phsar migrate status   lihat status migrasi
-//	phsar worker           job queue (River) — belum diaktifkan di Tahap 0
+//	phsar worker           worker terjemahan AI (dev: sudah ikut jalan di serve)
 package main
 
 import (
@@ -13,7 +13,9 @@ import (
 	"log/slog"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -21,7 +23,9 @@ import (
 	"phsar/internal/auth"
 	"phsar/internal/config"
 	"phsar/internal/httpx"
+	"phsar/internal/media"
 	"phsar/internal/platform/db"
+	"phsar/internal/translate"
 	"phsar/migrations"
 )
 
@@ -74,8 +78,36 @@ func run(args []string) error {
 		defer pool.Close()
 		return grantAdmin(ctx, pool, args[2], args[3])
 
+	case "translate-test":
+		// phsar translate-test ["teks"] — cek API key & model terjemahan tanpa membuka Seller Center.
+		text := "Cotton T-shirt, red, size M. Soft and comfortable."
+		if len(args) > 1 {
+			text = strings.Join(args[1:], " ")
+		}
+		return translateTest(ctx, cfg, text)
+
+	case "media-backfill":
+		// Antrekan video/foto lama (sebelum ada kompres) supaya ikut diproses worker.
+		pool, err := db.Open(ctx, cfg.DatabaseURL)
+		if err != nil {
+			return err
+		}
+		defer pool.Close()
+		n, err := media.Backfill(ctx, pool)
+		if err != nil {
+			return err
+		}
+		fmt.Printf("%d media diantrekan. Jalankan `make run` (atau `phsar worker`) untuk memprosesnya.\n", n)
+		return nil
+
 	case "worker":
-		log.Info("worker belum diaktifkan; akan memakai River di Tahap 1 (terjemahan AI, transcode video)")
+		// Worker terpisah untuk production (set WORKER_IN_SERVE=false di server API).
+		pool, err := db.Open(ctx, cfg.DatabaseURL)
+		if err != nil {
+			return err
+		}
+		defer pool.Close()
+		httpx.StartWorkers(ctx, cfg, log, pool)
 		<-ctx.Done()
 		return nil
 
@@ -84,8 +116,28 @@ func run(args []string) error {
 	}
 }
 
+func translateTest(ctx context.Context, cfg config.Config, text string) error {
+	t := httpx.NewTranslator(cfg)
+	if t == nil {
+		return fmt.Errorf("terjemahan nonaktif: ANTHROPIC_API_KEY kosong (TRANSLATOR=%s). Isi di .env lalu jalankan lagi", cfg.Translator)
+	}
+	keyHint := "(kosong)"
+	if k := cfg.AnthropicKey; len(k) > 12 {
+		keyHint = k[:10] + "…" + k[len(k)-4:]
+	}
+	fmt.Printf("Provider: %s · model: %s · key: %s\nTeks: %s\n\n", cfg.Translator, cfg.AnthropicModel, keyHint, text)
+	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	defer cancel()
+	res, err := t.Translate(ctx, translate.Request{Kind: "product", Source: "en", Targets: []string{"km", "zh"}, Fields: map[string]string{"name": text}})
+	if err != nil {
+		return fmt.Errorf("GAGAL: %w", err)
+	}
+	fmt.Printf("✅ Berhasil (model %s)\n  km: %s\n  zh: %s\n", res.Model, res.Texts["km"]["name"], res.Texts["zh"]["name"])
+	return nil
+}
+
 func usage() error {
-	return fmt.Errorf("pemakaian: phsar <serve|migrate [up|down|status|reset]|admin grant <hp> <peran>|worker>")
+	return fmt.Errorf("pemakaian: phsar <serve|migrate [up|down|status|reset]|admin grant <hp> <peran>|worker|translate-test|media-backfill>")
 }
 
 func newLogger(cfg config.Config) *slog.Logger {

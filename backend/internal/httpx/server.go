@@ -13,6 +13,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -26,8 +27,11 @@ import (
 	"phsar/internal/devtools"
 	"phsar/internal/health"
 	"phsar/internal/i18n"
+	"phsar/internal/media"
+	"phsar/internal/notify"
 	"phsar/internal/seller"
 	"phsar/internal/storage"
+	"phsar/internal/translate"
 	"phsar/internal/webui"
 )
 
@@ -37,7 +41,7 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 	r.Use(middleware.RealIP)
 	r.Use(requestLogger(log))
 	r.Use(middleware.Recoverer)
-	r.Use(middleware.Timeout(30 * time.Second))
+	r.Use(timeoutExceptUploads(30 * time.Second))
 	r.Use(i18n.Middleware(i18n.Lang(cfg.DefaultLang)))
 
 	if cfg.Env == "development" {
@@ -59,9 +63,14 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 			r.Get("/me", authSvc.HandleMe)
 		})
 	})
-	files := storage.Local{Dir: cfg.StorageDir, BaseURL: cfg.PublicBaseURL + "/media"}
+	files := newFiles(cfg)
 	uploader := storage.Uploader{Store: files, Pool: pool}
+	if media.Available() {
+		uploader.CheckVideo = media.CheckVideo(files) // tolak video > 3 menit / rusak langsung saat upload
+	}
 	sellers := seller.NewService(pool, files)
+	sellers.TranslationOn = newTranslator(cfg) != nil
+	sellers.MediaOn = media.Available()
 
 	// File publik (logo toko, foto titik penjemputan). File private/… tidak pernah disajikan di sini.
 	r.Handle("/media/public/*", http.StripPrefix("/media/public/",
@@ -69,6 +78,7 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 
 	r.Route("/v1/seller", func(r chi.Router) {
 		r.Use(authSvc.RequireUser("app", "seller_web"))
+		r.Mount("/notifications", (&notify.Handler{Pool: pool, Log: log}).Routes())
 		r.Mount("/", seller.NewHandler(sellers, uploader, log).Routes())
 	})
 	r.Route("/admin", func(r chi.Router) {
@@ -79,6 +89,7 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 	})
 
 	// Seller Center web
+	r.Get("/ui/config.js", webui.ConfigJS(cfg.GoogleMapsKey, cfg.GoogleMapsMapID))
 	r.Handle("/ui/*", webui.Assets())
 	r.Route("/seller", func(r chi.Router) {
 		r.Mount("/auth", authSvc.CookieRoutes("seller_web", "phsar_seller", "/seller/auth"))
@@ -114,10 +125,27 @@ func notYet(w http.ResponseWriter, _ *http.Request) {
 	Error(w, http.StatusNotImplemented, "not_implemented", "coming in a later phase")
 }
 
+// timeoutExceptUploads: batas waktu 30 detik untuk semua request kecuali upload video/foto.
+func timeoutExceptUploads(d time.Duration) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		withTimeout := middleware.Timeout(d)(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasSuffix(r.URL.Path, "/uploads") {
+				next.ServeHTTP(w, r)
+				return
+			}
+			withTimeout.ServeHTTP(w, r)
+		})
+	}
+}
+
 func Serve(ctx context.Context, cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) error {
 	authSvc := auth.NewService(pool, cfg, log)
 	if cfg.TelegramMode == "polling" {
 		go authSvc.RunTelegramPolling(ctx)
+	}
+	if cfg.WorkerInServe {
+		StartWorkers(ctx, cfg, log, pool)
 	}
 	srv := &http.Server{
 		Addr:              cfg.HTTPAddr,
@@ -142,6 +170,45 @@ func Serve(ctx context.Context, cfg config.Config, log *slog.Logger, pool *pgxpo
 		return srv.Shutdown(shutCtx)
 	}
 }
+
+// StartWorkers menjalankan worker latar: terjemahan AI + notifikasi Telegram.
+func StartWorkers(ctx context.Context, cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) {
+	go NewTranslationWorker(cfg, log, pool).Run(ctx)
+	go NewNotifyWorker(cfg, log, pool).Run(ctx)
+	go (&media.Worker{Pool: pool, Files: newFiles(cfg), Log: log}).Run(ctx)
+}
+
+func newFiles(cfg config.Config) storage.Local {
+	return storage.Local{Dir: cfg.StorageDir, BaseURL: strings.TrimRight(cfg.PublicBaseURL, "/") + "/media"}
+}
+
+// NewNotifyWorker: tanpa TELEGRAM_BOT_TOKEN notifikasi tetap tersimpan (lonceng), hanya tidak dikirim ke Telegram.
+func NewNotifyWorker(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) *notify.Worker {
+	w := &notify.Worker{Pool: pool, BaseURL: cfg.PublicBaseURL, Log: log}
+	if cfg.TelegramBotToken != "" {
+		w.Bot = &notify.TelegramBot{Token: cfg.TelegramBotToken}
+	}
+	return w
+}
+
+// NewTranslationWorker dipakai `phsar serve` (WORKER_IN_SERVE=true) dan `phsar worker`.
+func NewTranslationWorker(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) *translate.Worker {
+	t := newTranslator(cfg)
+	if t != nil {
+		log.Info("terjemahan AI aktif", "provider", cfg.Translator, "model", cfg.AnthropicModel,
+			"cadangan_google", cfg.GoogleTranslateKey != "" && cfg.TranslationFallback == "google")
+	}
+	return &translate.Worker{Pool: pool, T: t, Log: log}
+}
+
+// newTranslator: nil kalau API key belum diisi.
+func newTranslator(cfg config.Config) translate.Translator {
+	return translate.New(translate.Config{Provider: cfg.Translator, AnthropicKey: cfg.AnthropicKey, AnthropicModel: cfg.AnthropicModel,
+		GoogleKey: cfg.GoogleTranslateKey, Fallback: cfg.TranslationFallback})
+}
+
+// NewTranslator dipakai `phsar translate-test`.
+func NewTranslator(cfg config.Config) translate.Translator { return newTranslator(cfg) }
 
 func requestLogger(log *slog.Logger) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {

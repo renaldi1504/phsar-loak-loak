@@ -103,18 +103,19 @@ func (h *Handler) CheckPoint(w http.ResponseWriter, r *http.Request) {
 }
 
 type category struct {
-	ID       string     `json:"id"`
-	Name     string     `json:"name"`
-	Slug     string     `json:"slug"`
-	Icon     string     `json:"icon,omitempty"`
-	Children []category `json:"children,omitempty"`
+	ID         string     `json:"id"`
+	Name       string     `json:"name"`
+	Slug       string     `json:"slug"`
+	Icon       string     `json:"icon,omitempty"`
+	Children   []category `json:"children,omitempty"`
+	AllowsUsed bool       `json:"allows_used"` // false = hanya barang baru (kosmetik, makanan)
 }
 
 // GET /v1/app/categories
 func (h *Handler) Categories(w http.ResponseWriter, r *http.Request) {
 	lang := string(i18n.From(r.Context()))
 	rows, err := h.pool.Query(r.Context(), `
-		SELECT c.id, c.parent_id, COALESCE(ct.name, cen.name), COALESCE(ct.slug, cen.slug), COALESCE(c.icon, '')
+		SELECT c.id, c.parent_id, COALESCE(ct.name, cen.name), COALESCE(ct.slug, cen.slug), COALESCE(c.icon, ''), c.allows_used
 		FROM categories c
 		JOIN category_translations cen ON cen.category_id = c.id AND cen.lang = 'en'
 		LEFT JOIN category_translations ct ON ct.category_id = c.id AND ct.lang = $1::lang_code
@@ -129,7 +130,7 @@ func (h *Handler) Categories(w http.ResponseWriter, r *http.Request) {
 	for rows.Next() {
 		var c category
 		var parent *string
-		if err := rows.Scan(&c.ID, &parent, &c.Name, &c.Slug, &c.Icon); err != nil {
+		if err := rows.Scan(&c.ID, &parent, &c.Name, &c.Slug, &c.Icon, &c.AllowsUsed); err != nil {
 			writeErr(w, err)
 			return
 		}

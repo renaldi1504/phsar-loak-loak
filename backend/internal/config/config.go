@@ -25,6 +25,18 @@ type Config struct {
 
 	// File upload (sementara disk lokal; nanti Cloudflare R2)
 	StorageDir string
+
+	// Terjemahan AI
+	Translator          string // claude · google · fake · off
+	AnthropicKey        string
+	AnthropicModel      string
+	GoogleTranslateKey  string
+	TranslationFallback string // google · none
+	WorkerInServe       bool   // true = worker (terjemahan) ikut jalan di `phsar serve`
+
+	// Google Maps / Places di browser (Seller Center, admin). Kunci browser: batasi per domain di Google Cloud.
+	GoogleMapsKey   string
+	GoogleMapsMapID string
 }
 
 func Load() (Config, error) {
@@ -44,6 +56,15 @@ func Load() (Config, error) {
 		TelegramWebhookKey:  os.Getenv("TELEGRAM_WEBHOOK_KEY"),
 		SMSProvider:         get("SMS_PROVIDER", "log"),
 		StorageDir:          get("STORAGE_DIR", "./data/uploads"),
+
+		Translator:          get("TRANSLATOR", "claude"),
+		AnthropicKey:        os.Getenv("ANTHROPIC_API_KEY"),
+		AnthropicModel:      get("ANTHROPIC_MODEL", "claude-haiku-5-5"),
+		GoogleTranslateKey:  os.Getenv("GOOGLE_TRANSLATE_API_KEY"),
+		TranslationFallback: get("TRANSLATION_FALLBACK", "google"),
+		WorkerInServe:       get("WORKER_IN_SERVE", "true") == "true",
+		GoogleMapsKey:       os.Getenv("GOOGLE_MAPS_API_KEY"),
+		GoogleMapsMapID:     get("GOOGLE_MAPS_MAP_ID", "DEMO_MAP_ID"),
 	}
 	if c.DatabaseURL == "" {
 		return c, fmt.Errorf("DATABASE_URL belum diisi (lihat .env.example)")
@@ -61,6 +82,15 @@ func Load() (Config, error) {
 	}
 	if c.Env == "production" && c.SMSProvider == "log" {
 		return c, fmt.Errorf("SMS_PROVIDER=log tidak boleh dipakai di production")
+	}
+	switch c.Translator {
+	case "claude", "google", "off":
+	case "fake":
+		if c.Env == "production" {
+			return c, fmt.Errorf("TRANSLATOR=fake tidak boleh dipakai di production")
+		}
+	default:
+		return c, fmt.Errorf("TRANSLATOR harus claude, google, fake, atau off")
 	}
 	switch c.DefaultLang {
 	case "en", "km", "zh":

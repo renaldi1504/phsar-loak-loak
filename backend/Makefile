@@ -2,7 +2,7 @@
 -include ../.env
 export
 
-.PHONY: tidy run build test migrate-up migrate-down migrate-status migrate-reset
+.PHONY: media-backfill translate-test tidy run build test qa migrate-up migrate-down migrate-status migrate-reset
 
 tidy:
 	go mod tidy
@@ -27,3 +27,14 @@ migrate-status:
 
 migrate-reset:
 	go run ./cmd/phsar migrate reset
+
+qa:
+	../scripts/qa.sh
+
+# Cek API key & model terjemahan AI (satu kalimat contoh → km & zh)
+translate-test:
+	go run ./cmd/phsar translate-test
+
+# Antrekan video/foto lama (sebelum ffmpeg terpasang) supaya dikompres
+media-backfill:
+	go run ./cmd/phsar media-backfill

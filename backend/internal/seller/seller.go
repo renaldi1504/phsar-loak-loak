@@ -42,10 +42,14 @@ type Service struct {
 	pool  *pgxpool.Pool
 	files storage.Storage
 	now   func() time.Time
+	// TranslationOn: false = server tidak punya API key terjemahan (job hanya menunggu di antrean).
+	TranslationOn bool
+	// MediaOn: true = ffmpeg tersedia → video dikompres & dibuatkan sampul, foto diperkecil (worker media).
+	MediaOn bool
 }
 
 func NewService(pool *pgxpool.Pool, files storage.Storage) *Service {
-	return &Service{pool: pool, files: files, now: time.Now}
+	return &Service{pool: pool, files: files, now: time.Now, TranslationOn: true}
 }
 
 // ---- Toko ----------------------------------------------------------------
@@ -142,6 +146,11 @@ func upsertAbout(ctx context.Context, tx pgx.Tx, storeID, slug, about, lang stri
 		storeID, lang, about, slug); err != nil {
 		return err
 	}
+	// Bahasa lain sekarang hasil terjemahan dari teks ini (kalau seller ganti bahasa, baris lama ikut diperbarui AI).
+	if _, err := tx.Exec(ctx, `UPDATE store_translations SET source = 'machine' WHERE store_id = $1 AND lang <> $2::lang_code AND source = 'seller'`,
+		storeID, lang); err != nil {
+		return err
+	}
 	if strings.TrimSpace(about) == "" {
 		return nil
 	}
@@ -152,8 +161,7 @@ func upsertAbout(ctx context.Context, tx pgx.Tx, storeID, slug, about, lang stri
 		if _, err := tx.Exec(ctx, `
 			INSERT INTO translation_jobs (entity_table, entity_id, source_lang, target_lang)
 			SELECT 'store_translations', $1::text, $2::lang_code, $3::lang_code
-			WHERE NOT EXISTS (SELECT 1 FROM store_translations WHERE store_id = $1::uuid AND lang = $3::lang_code AND source = 'seller')
-			  AND NOT EXISTS (SELECT 1 FROM translation_jobs WHERE entity_table = 'store_translations' AND entity_id = $1::text
+			WHERE NOT EXISTS (SELECT 1 FROM translation_jobs WHERE entity_table = 'store_translations' AND entity_id = $1::text
 			                  AND target_lang = $3::lang_code AND status = 'queued')`,
 			storeID, lang, target); err != nil {
 			return err
@@ -477,6 +485,7 @@ type PickupInput struct {
 	Note         string              `json:"note"`
 	PhotoKey     string              `json:"photo_key"` // kind=pickup_photo
 	IsDefault    bool                `json:"is_default"`
+	PlaceID      string              `json:"google_place_id"` // dari Google Places (opsional)
 }
 
 type PickupPoint struct {
@@ -491,6 +500,7 @@ type PickupPoint struct {
 	Note          string              `json:"note,omitempty"`
 	PhotoURL      string              `json:"photo_url,omitempty"`
 	IsDefault     bool                `json:"is_default"`
+	PlaceID       string              `json:"google_place_id,omitempty"`
 	Verified      bool                `json:"verified"`
 	RejectionNote string              `json:"rejection_note,omitempty"`
 }
@@ -501,7 +511,10 @@ var hhmm = regexp.MustCompile(`^([01][0-9]|2[0-3]):[0-5][0-9]$`)
 func (s *Service) validatePickup(ctx context.Context, userID string, in *PickupInput) error {
 	in.Label, in.AddressLine = strings.TrimSpace(in.Label), strings.TrimSpace(in.AddressLine)
 	in.ContactName, in.ContactPhone = strings.TrimSpace(in.ContactName), strings.TrimSpace(in.ContactPhone)
+	in.PlaceID = strings.TrimSpace(in.PlaceID)
 	switch {
+	case len(in.PlaceID) > 300:
+		return invalid("google_place_id", "terlalu panjang")
 	case in.Label == "" || len([]rune(in.Label)) > 60:
 		return invalid("label", "1–60 karakter")
 	case len([]rune(in.AddressLine)) < 5 || len([]rune(in.AddressLine)) > 300:
@@ -545,7 +558,8 @@ func (s *Service) inServiceArea(ctx context.Context, lat, lng float64) error {
 func (s *Service) ListPickupPoints(ctx context.Context, storeID string) ([]PickupPoint, error) {
 	rows, err := s.pool.Query(ctx, `
 		SELECT id, label, address_line, lat::float8, lng::float8, contact_name, contact_phone, pickup_hours,
-		       coalesce(note, ''), coalesce(photo_key, ''), is_default, verified_at IS NOT NULL, coalesce(rejection_note, '')
+		       coalesce(note, ''), coalesce(photo_key, ''), is_default, verified_at IS NOT NULL, coalesce(rejection_note, ''),
+		       coalesce(google_place_id, '')
 		FROM store_pickup_points WHERE store_id = $1 AND deleted_at IS NULL ORDER BY is_default DESC, created_at`, storeID)
 	if err != nil {
 		return nil, err
@@ -557,7 +571,7 @@ func (s *Service) ListPickupPoints(ctx context.Context, storeID string) ([]Picku
 		var hours []byte
 		var photo string
 		if err := rows.Scan(&p.ID, &p.Label, &p.AddressLine, &p.Lat, &p.Lng, &p.ContactName, &p.ContactPhone, &hours,
-			&p.Note, &photo, &p.IsDefault, &p.Verified, &p.RejectionNote); err != nil {
+			&p.Note, &photo, &p.IsDefault, &p.Verified, &p.RejectionNote, &p.PlaceID); err != nil {
 			return nil, err
 		}
 		_ = json.Unmarshal(hours, &p.PickupHours)
@@ -587,9 +601,10 @@ func (s *Service) CreatePickupPoint(ctx context.Context, storeID, userID string,
 			}
 		}
 		_, err := tx.Exec(ctx, `
-			INSERT INTO store_pickup_points (store_id, label, address_line, lat, lng, contact_name, contact_phone, pickup_hours, note, photo_key, is_default)
-			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
-			storeID, in.Label, in.AddressLine, in.Lat, in.Lng, in.ContactName, in.ContactPhone, hours, nilIfBlank(in.Note), nilIfBlank(in.PhotoKey), isDefault)
+			INSERT INTO store_pickup_points (store_id, label, address_line, lat, lng, contact_name, contact_phone, pickup_hours, note, photo_key, is_default, google_place_id)
+			VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+			storeID, in.Label, in.AddressLine, in.Lat, in.Lng, in.ContactName, in.ContactPhone, hours, nilIfBlank(in.Note), nilIfBlank(in.PhotoKey), isDefault,
+			nilIfBlank(in.PlaceID))
 		return err
 	})
 	if err != nil {
@@ -611,13 +626,16 @@ func (s *Service) UpdatePickupPoint(ctx context.Context, storeID, pointID, userI
 			}
 		}
 		tag, err := tx.Exec(ctx, `
-			UPDATE store_pickup_points SET label = $3, address_line = $4, lat = $5, lng = $6, contact_name = $7, contact_phone = $8,
-			  pickup_hours = $9, note = $10, photo_key = coalesce($11, photo_key), is_default = is_default OR $12,
-			  verified_at = CASE WHEN lat = $5 AND lng = $6 AND address_line = $4 THEN verified_at END,
-			  verified_by = CASE WHEN lat = $5 AND lng = $6 AND address_line = $4 THEN verified_by END
+			UPDATE store_pickup_points SET label = $3::text, address_line = $4::text, lat = $5::numeric, lng = $6::numeric,
+			  contact_name = $7::text, contact_phone = $8::text,
+			  pickup_hours = $9, note = $10::text, photo_key = coalesce($11::text, photo_key), is_default = is_default OR $12::bool,
+			  google_place_id = $13::text,
+			  -- Lokasi/alamat berubah → harus diverifikasi admin lagi.
+			  verified_at = CASE WHEN lat = $5::numeric AND lng = $6::numeric AND address_line = $4::text THEN verified_at END,
+			  verified_by = CASE WHEN lat = $5::numeric AND lng = $6::numeric AND address_line = $4::text THEN verified_by END
 			WHERE id = $2 AND store_id = $1 AND deleted_at IS NULL`,
 			storeID, pointID, in.Label, in.AddressLine, in.Lat, in.Lng, in.ContactName, in.ContactPhone, hours,
-			nilIfBlank(in.Note), nilIfBlank(in.PhotoKey), in.IsDefault)
+			nilIfBlank(in.Note), nilIfBlank(in.PhotoKey), in.IsDefault, nilIfBlank(in.PlaceID))
 		if err == nil && tag.RowsAffected() == 0 {
 			return ErrNotFound
 		}

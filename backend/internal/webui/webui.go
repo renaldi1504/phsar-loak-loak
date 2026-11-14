@@ -4,6 +4,7 @@ package webui
 
 import (
 	"embed"
+	"encoding/json"
 	"net/http"
 )
 
@@ -39,4 +40,17 @@ func Assets() http.Handler {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		fs.ServeHTTP(w, r)
 	}))
+}
+
+// ConfigJS: GET /ui/config.js — pengaturan publik untuk halaman web (kunci Google Maps browser).
+// Kunci ini memang terlihat di browser; amankan dengan pembatasan HTTP referrer + API di Google Cloud.
+func ConfigJS(mapsKey, mapID string) http.HandlerFunc {
+	b, _ := json.Marshal(map[string]string{"googleMapsKey": mapsKey, "googleMapId": mapID})
+	body := []byte("window.PHSAR_CONFIG = " + string(b) + ";\n")
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		_, _ = w.Write(body)
+	}
 }

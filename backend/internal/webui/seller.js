@@ -7,7 +7,7 @@ addStrings({
     st_onboarding: 'Setting up', st_pending_review: 'Under review', st_active: 'Active', st_suspended: 'Suspended', st_closed: 'Closed',
     checklist: 'Before you can sell', ck_logo: 'Store logo', ck_about: 'Store description', ck_kyc: 'Identity check (KYC)', ck_pickup: 'Pickup point in Sihanoukville',
     ck_review: 'Approved by Phsar', submit: 'Send for review', submitHint: 'Phsar checks your identity and pickup point, usually within 1–2 working days.',
-    reviewing: 'Phsar is reviewing your store. You can’t edit it until the review is done.', activeMsg: 'Your store is active. Next: add products.',
+    reviewing: 'Phsar is reviewing your store. You can’t edit it until the review is done.', activeMsg: 'Your store is active. Add products in the Products tab.',
     needsFix: 'Phsar asked for changes:', tabProfile: 'Profile', tabKyc: 'Identity (KYC)', tabPickup: 'Pickup points',
     logo: 'Logo', uploadLogo: 'Upload logo', social: 'Social links', save: 'Save', saved: 'Saved',
     kycIntro: 'Your documents are only visible to the Phsar verification team.', sellerType: 'Seller type',
@@ -18,6 +18,7 @@ addStrings({
     addPickup: 'Add pickup point', editPickup: 'Edit pickup point', label: 'Name', labelPh: 'e.g. Shop Ochheuteal', address: 'Address', addressPh: 'Street, landmark',
     contactName: 'Contact person', contactPhone: 'Contact phone', hours: 'Pickup hours', note: 'Directions for the courier', photo: 'Photo of the shop front',
     pinInside: 'Inside our delivery area', pinOutside: 'Outside our delivery area (Sihanoukville only for now)', pinNone: 'Tap the map to set the pin',
+    searchPlace: 'Search your shop or a nearby place', searchHint: 'Pick a result, then drag the pin to your exact door.', myLocation: 'Use my location', noGeo: 'Could not get your location.',
     verified: 'Verified', notVerified: 'Waiting for check', del: 'Delete', edit: 'Edit', cancel: 'Cancel', default: 'Default', makeDefault: 'Use as default',
     d_mon: 'Mon', d_tue: 'Tue', d_wed: 'Wed', d_thu: 'Thu', d_fri: 'Fri', d_sat: 'Sat', d_sun: 'Sun',
     err_validation: 'Please check the highlighted field.', err_slug_taken: 'That store address is taken. Try another name.', err_outside_service_area: 'That location is outside Sihanoukville.',
@@ -39,6 +40,7 @@ addStrings({
     addPickup: 'បន្ថែមទីតាំងទទួល', editPickup: 'កែទីតាំងទទួល', label: 'ឈ្មោះ', labelPh: 'ឧ. ហាងអូរឈើទាល', address: 'អាសយដ្ឋាន', addressPh: 'ផ្លូវ សម្គាល់',
     contactName: 'អ្នកទំនាក់ទំនង', contactPhone: 'លេខទូរស័ព្ទ', hours: 'ម៉ោងទទួលកញ្ចប់', note: 'ការណែនាំសម្រាប់អ្នកដឹក', photo: 'រូបថតមុខហាង',
     pinInside: 'នៅក្នុងតំបន់ដឹកជញ្ជូន', pinOutside: 'នៅក្រៅតំបន់ (បច្ចុប្បន្នតែក្រុងព្រះសីហនុ)', pinNone: 'ចុចលើផែនទីដើម្បីដាក់ម្ជុល',
+    searchPlace: 'ស្វែងរកហាង ឬទីកន្លែងក្បែរនោះ', searchHint: 'ជ្រើសលទ្ធផល រួចអូសម្ជុលទៅត្រង់ទ្វារហាង។', myLocation: 'ប្រើទីតាំងខ្ញុំ', noGeo: 'មិនអាចយកទីតាំងរបស់អ្នកបានទេ។',
     verified: 'បានផ្ទៀងផ្ទាត់', notVerified: 'រង់ចាំពិនិត្យ', del: 'លុប', edit: 'កែ', cancel: 'បោះបង់', default: 'លំនាំដើម', makeDefault: 'ប្រើជាលំនាំដើម',
     d_mon: 'ច', d_tue: 'អ', d_wed: 'ព', d_thu: 'ព្រ', d_fri: 'សុ', d_sat: 'ស', d_sun: 'អា',
     err_validation: 'សូមពិនិត្យវាលដែលបានសម្គាល់។', err_slug_taken: 'អាសយដ្ឋានហាងនេះមានគេប្រើហើយ។', err_outside_service_area: 'ទីតាំងនៅក្រៅក្រុងព្រះសីហនុ។',
@@ -60,6 +62,7 @@ addStrings({
     addPickup: '添加取件点', editPickup: '编辑取件点', label: '名称', labelPh: '例如：Ochheuteal 店', address: '地址', addressPh: '街道、地标',
     contactName: '联系人', contactPhone: '联系电话', hours: '取件时间', note: '给快递员的路线说明', photo: '店铺门面照片',
     pinInside: '在配送范围内', pinOutside: '不在配送范围内（目前仅限西哈努克城）', pinNone: '点击地图设置定位',
+    searchPlace: '搜索你的店铺或附近地点', searchHint: '选择结果后，把定位拖到店门口。', myLocation: '使用我的位置', noGeo: '无法获取你的位置。',
     verified: '已核实', notVerified: '等待核实', del: '删除', edit: '编辑', cancel: '取消', default: '默认', makeDefault: '设为默认',
     d_mon: '一', d_tue: '二', d_wed: '三', d_thu: '四', d_fri: '五', d_sat: '六', d_sun: '日',
     err_validation: '请检查标出的字段。', err_slug_taken: '该店铺地址已被使用，请换个名称。', err_outside_service_area: '该位置不在西哈努克城。',
@@ -72,7 +75,7 @@ const statusChip = st => `<span class="chip ${({active: 'ok', pending_review: 'w
 
 function shell(inner) {
   return `<header class="top"><a class="brand" href="#/">${brandSVG}<span><b>Phsar</b><small>${esc(t('appName')).toUpperCase()}</small></span></a>
-    <div class="top-actions">${langSwitch()}${P.token ? `<button type="button" onclick="logout()">${t('logout')}</button>` : ''}</div></header>
+    <div class="top-actions">${P.token ? bellButton() : ''}${langSwitch()}${P.token ? `<button type="button" onclick="logout()">${t('logout')}</button>` : ''}</div></header>
     <main>${inner}</main>`;
 }
 
@@ -80,13 +83,19 @@ async function render() {
   const app = $('#app');
   if (!P.token) {
     app.innerHTML = shell(loginView(t('appName')));
-    bindLogin(() => { location.hash = '#/'; render(); });
+    // Setelah login, kembali ke halaman yang dibuka (mis. link undangan staf).
+    bindLogin(() => { if (!/^#\/invite\//.test(location.hash)) location.hash = '#/'; render(); });
     return;
   }
+  const inv = location.hash.match(/^#\/invite\/([0-9a-f]+)/);
+  const pm = location.hash.match(/^#\/store\/([0-9a-f-]+)\/product\/(new|[0-9a-f-]+)/);
   const m = location.hash.match(/^#\/store\/([0-9a-f-]+)/);
   try {
-    if (m) await renderStore(m[1]); else await renderStores();
+    if (inv) await renderInvite(inv[1]);
+    else if (pm) { if ($('#fName') && PF.E) readForm(); await renderProductEditor(pm[1], pm[2]); }
+    else if (m) await renderStore(m[1]); else await renderStores();
   } catch (e) { toast(errMsg(e)); }
+  loadBell();
 }
 
 // ---- Daftar toko + buat toko ----
@@ -105,14 +114,15 @@ async function renderStores() {
       <label>${t('storeAbout')}<textarea id="cAbout" maxlength="2000"></textarea></label>
       <label>${t('writtenIn')}<select id="cLang"><option value="km">ខ្មែរ</option><option value="en">English</option><option value="zh">中文</option></select></label>
       <p class="muted">${t('aboutHint')}</p>
-      <button class="primary" id="cBtn" type="button">${t('create')}</button>
+      <button class="primary" id="cBtn" type="button" data-errors-anchor>${t('create')}</button>
     </section>`);
   $('#cLang').value = P.lang;
   $('#cBtn').onclick = async () => {
+    if (!checkRequired([['#cName', t('minChars', {n: 2}), el => el.value.trim().length >= 2]])) return;
     try {
       const st = await api('/v1/seller/stores', {method: 'POST', body: {name: $('#cName').value, about: $('#cAbout').value, about_lang: $('#cLang').value}});
       location.hash = '#/store/' + st.id;
-    } catch (e) { toast(errMsg(e)); }
+    } catch (e) { showError(e, {name: '#cName', about: '#cAbout', about_lang: '#cLang'}); }
   };
 }
 
@@ -123,6 +133,9 @@ async function renderStore(id) {
     api(`/v1/seller/stores/${id}/kyc`).catch(() => ({kyc: null})),
     api(`/v1/seller/stores/${id}/pickup-points`),
   ]);
+  const owner = st.role === 'owner';
+  if (S.storeId !== id) { S.storeId = id; S.tab = st.status === 'active' || !owner ? 'products' : 'profile'; }
+  if (!owner) S.tab = 'products'; // staf hanya mengelola produk
   S.store = st; S.kyc = kyc.kyc; S.points = pts.pickup_points;
   const c = st.checklist, locked = st.status === 'pending_review';
   const item = (ok, label) => `<div class="check ${ok ? 'done' : ''}"><i>${ok ? '✓' : ''}</i>${label}</div>`;
@@ -140,20 +153,24 @@ async function renderStore(id) {
       ${item(c.kyc !== 'missing', `${t('ck_kyc')} · <span class="muted">${t('kyc_' + c.kyc)}</span>`)}
       ${item(c.pickup_points > 0, `${t('ck_pickup')} · <span class="muted">${c.pickup_points_verified}/${c.pickup_points} ${t('verified').toLowerCase()}</span>`)}
       ${item(st.status === 'active', t('ck_review'))}
-      ${st.status === 'onboarding' ? `<div class="row"><button class="primary" id="submitBtn" type="button" ${c.can_submit ? '' : 'disabled'}>${t('submit')}</button><span class="muted">${t('submitHint')}</span></div>` : ''}
+      ${st.status === 'onboarding' && owner ? `<div class="row"><button class="primary" id="submitBtn" type="button" ${c.can_submit ? '' : 'disabled'}>${t('submit')}</button><span class="muted">${t('submitHint')}</span></div>` : ''}
     </section>
-    <div class="tabs" role="tablist">${['profile', 'kyc', 'pickup'].map(k =>
+    ${owner ? '' : `<div class="banner info">${t('staffNote')}</div>`}
+    <div class="tabs" role="tablist">${(owner ? ['products', 'profile', 'kyc', 'pickup', 'team'] : ['products']).map(k =>
       `<button type="button" role="tab" aria-selected="${S.tab === k}" onclick="S.tab='${k}';S.editing=null;render()">${t('tab' + k[0].toUpperCase() + k.slice(1))}</button>`).join('')}</div>
     <div id="tab"></div>`);
   if ($('#submitBtn')) $('#submitBtn').onclick = async () => {
     try { await api(`/v1/seller/stores/${id}/submit`, {method: 'POST'}); render(); } catch (e) { toast(errMsg(e)); }
   };
-  ({profile: tabProfile, kyc: tabKyc, pickup: tabPickup})[S.tab](id, locked);
+  await ({products: tabProducts, profile: tabProfile, kyc: tabKyc, pickup: tabPickup, team: tabTeam})[S.tab](id, locked);
 }
 
 function tabProfile(id, locked) {
   const st = S.store, aboutLang = Object.keys(st.about).find(l => st.about[l]) || P.lang;
   $('#tab').innerHTML = `<section class="card">
+    <div class="store-banner">${st.banner_url ? `<img src="${esc(st.banner_url)}" alt="">` : `<span class="muted">${t('bannerHint')}</span>`}</div>
+    <div class="row"><label class="btn" style="flex-direction:row">${st.banner_url ? t('changeBanner') : t('uploadBanner')}<input type="file" id="bannerFile" accept="image/jpeg,image/png,image/webp" class="hidden" ${locked ? 'disabled' : ''}></label>
+      <span class="muted">${t('bannerSize')}</span></div>
     <div class="row"><img class="logo" id="logoImg" src="${esc(st.logo_url || '')}" alt="" onerror="this.style.visibility='hidden'">
       <label class="btn" style="flex-direction:row">${t('uploadLogo')}<input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp" class="hidden" ${locked ? 'disabled' : ''}></label></div>
     <label>${t('storeName')}<input id="pName" value="${esc(st.name)}" maxlength="80"></label>
@@ -162,8 +179,18 @@ function tabProfile(id, locked) {
     <p class="muted">${t('aboutHint')}</p>
     <h2>${t('social')}</h2>
     <div class="grid">${['telegram', 'facebook', 'tiktok'].map(k => `<label>${k[0].toUpperCase() + k.slice(1)}<input id="soc_${k}" value="${esc(st.social_links?.[k] || '')}" maxlength="200"></label>`).join('')}</div>
-    <div><button class="primary" id="pSave" type="button" ${locked ? 'disabled' : ''}>${t('save')}</button></div></section>`;
+    <div data-errors-anchor><button class="primary" id="pSave" type="button" ${locked ? 'disabled' : ''}>${t('save')}</button></div></section>`;
   $('#pLang').value = aboutLang;
+  $('#bannerFile').onchange = async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 8 * 1024 * 1024) { toast(t('err_upload_too_large')); return; }
+    try {
+      const up = await upload('store_banner', f);
+      await api(`/v1/seller/stores/${id}`, {method: 'PATCH', body: {banner_key: up.key}});
+      toast(t('saved')); render();
+    } catch (err) { showError(err, {banner_key: '#bannerFile', media: '#bannerFile'}); }
+  };
   $('#logoFile').onchange = async e => {
     try {
       const up = await upload('store_logo', e.target.files[0]);
@@ -174,10 +201,11 @@ function tabProfile(id, locked) {
   $('#pSave').onclick = async () => {
     const social = {};
     for (const k of ['telegram', 'facebook', 'tiktok']) { const v = $('#soc_' + k).value.trim(); if (v) social[k] = v; }
+    if (!checkRequired([['#pName', t('minChars', {n: 2}), el => el.value.trim().length >= 2]])) return;
     try {
       await api(`/v1/seller/stores/${id}`, {method: 'PATCH', body: {name: $('#pName').value, about: $('#pAbout').value, about_lang: $('#pLang').value, social_links: social}});
       toast(t('saved')); render();
-    } catch (e) { toast(errMsg(e)); }
+    } catch (e) { showError(e, f => f.startsWith('social') ? '#soc_telegram' : ({name: '#pName', about: '#pAbout', about_lang: '#pLang', logo_key: '#logoFile'})[f]); }
   };
 }
 
@@ -193,19 +221,19 @@ function tabKyc(id) {
     <p class="muted" id="kDocState">${k.has_id_document ? '✓ ' + t('idDocDone') : ''}</p>
     <div class="grid"><label>${t('tin')} <span class="muted">(${t('optional')})</span><input id="kTin" value="${esc(k.tin || '')}" ${done ? 'disabled' : ''}></label>
       <label>${t('mocNo')} <span class="muted">(${t('optional')})</span><input id="kMoc" value="${esc(k.moc_license_no || '')}" ${done ? 'disabled' : ''}></label></div>
-    <div><button class="primary" id="kSave" type="button" ${done ? 'disabled' : ''}>${t('save')}</button></div></section>`;
+    <div data-errors-anchor><button class="primary" id="kSave" type="button" ${done ? 'disabled' : ''}>${t('save')}</button></div></section>`;
   if (k.seller_type) $('#kType').value = k.seller_type;
   let docKey = null;
   $('#kDoc').onchange = async e => {
     try { docKey = (await upload('kyc_document', e.target.files[0])).key; $('#kDocState').textContent = '✓ ' + t('idDocDone'); } catch (err) { toast(errMsg(err)); }
   };
   $('#kSave').onclick = async () => {
+    if (!checkRequired([['#kName'], ['#kDoc', t('required'), () => !!(docKey || k.has_id_document)]])) return;
     try {
-      if (!docKey && !k.has_id_document) { toast(t('idDoc')); return; }
       await api(`/v1/seller/stores/${id}/kyc`, {method: 'PUT', body: {seller_type: $('#kType').value, legal_name: $('#kName').value,
         id_document_key: docKey || '', tin: $('#kTin').value, moc_license_no: $('#kMoc').value}});
       toast(t('saved')); render();
-    } catch (e) { toast(errMsg(e)); }
+    } catch (e) { showError(e, {seller_type: '#kType', legal_name: '#kName', id_document_key: '#kDoc', media: '#kDoc', tin: '#kTin', moc_license_no: '#kMoc'}); }
   };
 }
 
@@ -235,7 +263,9 @@ async function deletePoint(sid, pid) {
 function pickupForm() {
   const p = S.editing;
   return `<section class="card"><h2>${p.id ? t('editPickup') : t('addPickup')}</h2>
-    <div id="map" class="map"></div><p class="muted" id="pinState">${t('pinNone')}</p>
+    ${Maps.google() ? `<div class="field"><span class="flabel">${t('searchPlace')}</span><div id="placeSearch" class="place-wrap"></div></div><p class="muted">${t('searchHint')}</p>` : ''}
+    <div id="map" class="map"></div>
+    <div class="spread"><p class="muted" id="pinState">${t('pinNone')}</p><button type="button" id="myLoc">📍 ${t('myLocation')}</button></div>
     <div class="grid"><label>${t('label')}<input id="fLabel" value="${esc(p.label || '')}" placeholder="${t('labelPh')}" maxlength="60"></label>
       <label>${t('address')}<input id="fAddr" value="${esc(p.address_line || '')}" placeholder="${t('addressPh')}" maxlength="300"></label>
       <label>${t('contactName')}<input id="fCName" value="${esc(p.contact_name || '')}"></label>
@@ -246,7 +276,7 @@ function pickupForm() {
     <label>${t('note')} <textarea id="fNote" maxlength="500">${esc(p.note || '')}</textarea></label>
     <label>${t('photo')} <span class="muted">(${t('optional')})</span><input type="file" id="fPhoto" accept="image/jpeg,image/png,image/webp"></label>
     <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="fDefault" style="width:20px;min-height:20px;accent-color:var(--pink)" ${p.is_default ? 'checked' : ''}> ${t('makeDefault')}</label>
-    <div class="row"><button class="primary" id="fSave" type="button">${t('save')}</button><button type="button" onclick="S.editing=null;render()">${t('cancel')}</button></div></section>`;
+    <div class="row" data-errors-anchor><button class="primary" id="fSave" type="button">${t('save')}</button><button type="button" onclick="S.editing=null;render()">${t('cancel')}</button></div></section>`;
 }
 
 async function checkPin() {
@@ -257,32 +287,63 @@ async function checkPin() {
   } catch (e) { toast(errMsg(e)); }
 }
 
-function bindPickupForm(id) {
-  const center = S.pin || [10.6274, 103.5223]; // pusat Sihanoukville
-  S.map = L.map('map').setView(center, S.pin ? 17 : 13);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, attribution: '© OpenStreetMap'}).addTo(S.map);
-  S.marker = S.pin ? L.marker(S.pin).addTo(S.map) : null;
-  checkPin();
-  S.map.on('click', e => {
-    S.pin = [Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6))];
-    if (S.marker) S.marker.setLatLng(S.pin); else S.marker = L.marker(S.pin).addTo(S.map);
-    checkPin();
+async function bindPickupForm(id) {
+  S.placeId = S.editing.google_place_id || '';
+  let autoAddr = null; // alamat terakhir yang diisi otomatis; kalau seller mengetik sendiri, tidak ditimpa
+  const setAddr = (addr, force) => {
+    const el = $('#fAddr');
+    if (!el || !addr) return;
+    if (force || !el.value.trim() || el.value === autoAddr) { el.value = addr.slice(0, 300); autoAddr = el.value; }
+  };
+  const pickerP = Maps.picker({
+    mapEl: $('#map'), searchEl: $('#placeSearch'),
+    pin: S.pin ? {lat: S.pin[0], lng: S.pin[1]} : null,
+    onPin: p => { S.pin = [p.lat, p.lng]; checkPin(); },
+    onPlace: pl => {
+      S.placeId = pl.placeId;
+      setAddr(pl.address, true);
+      if (!$('#fLabel').value.trim() && pl.name) $('#fLabel').value = pl.name.slice(0, 60);
+    },
+    onAddress: (addr, placeId) => { setAddr(addr); if (placeId && !S.placeId) S.placeId = placeId; },
   });
+  checkPin();
+  $('#myLoc').onclick = async () => {
+    const picker = await pickerP;
+    if (!navigator.geolocation) { toast(t('noGeo')); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => { S.placeId = ''; picker.setPin({lat: pos.coords.latitude, lng: pos.coords.longitude}); },
+      () => toast(t('noGeo')), {enableHighAccuracy: true, timeout: 10000});
+  };
   let photoKey = '';
   $('#fPhoto').onchange = async e => { try { photoKey = (await upload('pickup_photo', e.target.files[0])).key; } catch (err) { toast(errMsg(err)); } };
   $('#fSave').onclick = async () => {
-    if (!S.pin) { toast(t('pinNone')); return; }
+    if (!checkRequired([
+      ['#map', t('pinNone'), () => !!S.pin],
+      ['#fLabel'],
+      ['#fAddr', t('minChars', {n: 5}), el => el.value.trim().length >= 5],
+      ['#fCName'],
+      ['#fCPhone', t('minChars', {n: 8}), el => el.value.replace(/\D/g, '').length >= 8],
+      ['.hours', t('required'), () => DAYS.some(d => $('#h_' + d).checked)],
+    ])) return;
     const hours = {};
     for (const d of DAYS) if ($('#h_' + d).checked) hours[d] = [$('#hf_' + d).value, $('#ht_' + d).value];
     const body = {label: $('#fLabel').value, address_line: $('#fAddr').value, lat: S.pin[0], lng: S.pin[1], contact_name: $('#fCName').value,
-      contact_phone: $('#fCPhone').value, pickup_hours: hours, note: $('#fNote').value, photo_key: photoKey, is_default: $('#fDefault').checked};
+      contact_phone: $('#fCPhone').value, pickup_hours: hours, note: $('#fNote').value, photo_key: photoKey, is_default: $('#fDefault').checked,
+      google_place_id: S.placeId || ''};
     try {
       const pid = S.editing.id;
       await api(`/v1/seller/stores/${id}/pickup-points${pid ? '/' + pid : ''}`, {method: pid ? 'PUT' : 'POST', body});
       S.editing = null; toast(t('saved')); render();
-    } catch (e) { toast(errMsg(e)); }
+    } catch (e) {
+      showError(e, {label: '#fLabel', address_line: '#fAddr', contact_name: '#fCName', contact_phone: '#fCPhone', pickup_hours: '.hours',
+        note: '#fNote', photo_key: '#fPhoto', media: '#fPhoto', google_place_id: '#map', _location: '#map', lat: '#map', lng: '#map', pickup_points: '#fSave'});
+    }
   };
 }
 
-window.addEventListener('hashchange', () => { S.editing = null; render(); });
+window.addEventListener('hashchange', () => {
+  S.editing = null;
+  if (!/\/product\//.test(location.hash)) PF.E = null; // keluar dari editor → form dibuang
+  render();
+});
 (async () => { document.documentElement.lang = P.lang; await refreshSession(); render(); })();

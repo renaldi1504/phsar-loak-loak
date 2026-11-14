@@ -58,6 +58,131 @@ async function upload(kind, file) {
   const fd = new FormData(); fd.append('kind', kind); fd.append('file', file);
   return api('/v1/seller/uploads', {method: 'POST', body: fd});
 }
+// ---- Validasi form: tandai field, scroll, fokus ----
+const fieldT = {
+  en: {pickOne: 'Please choose one.', fixBelow: 'Can’t save yet. Please fix:', fixN: '{n} things need fixing — see the list above the buttons.', required: 'Please fill this in.', checkField: 'Please check this field.', minChars: 'At least {n} characters.', positive: 'Enter an amount above 0.'},
+  km: {pickOne: 'សូមជ្រើសរើសមួយ។', fixBelow: 'មិនទាន់អាចរក្សាទុកបានទេ។ សូមកែ៖', fixN: 'មាន {n} ចំណុចត្រូវកែ — មើលបញ្ជីនៅលើប៊ូតុង។', required: 'សូមបំពេញ។', checkField: 'សូមពិនិត្យវាលនេះ។', minChars: 'យ៉ាងហោចណាស់ {n} តួអក្សរ។', positive: 'សូមបញ្ចូលចំនួនលើសពី 0។'},
+  zh: {pickOne: '请选择一项。', fixBelow: '暂时无法保存，请修改：', fixN: '有 {n} 处需要修改——请看按钮上方的列表。', required: '请填写此项。', checkField: '请检查此项。', minChars: '至少 {n} 个字符。', positive: '请输入大于 0 的金额。'},
+};
+for (const l of ['en', 'km', 'zh']) P.T[l] = Object.assign(P.T[l] || {}, fieldT[l]);
+
+function clearFieldErrors(root = document) {
+  root.querySelectorAll('.invalid').forEach(el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); });
+  root.querySelectorAll('.ferr, #formErrors').forEach(el => el.remove());
+}
+
+// fieldName: nama field yang dibaca manusia — dari data-label, label, judul kolom tabel, atau judul di atasnya.
+function fieldName(el) {
+  if (!el) return '';
+  if (el.dataset && el.dataset.label) return el.dataset.label;
+  const td = el.closest('td');
+  if (td) {
+    const tr = td.closest('tr'), i = [...tr.children].indexOf(td);
+    const th = tr.closest('table')?.querySelectorAll('thead th')[i];
+    const name = [...tr.children].find(c => !c.querySelector('input,select,button') && !['', '—'].includes(c.textContent.trim()))?.textContent.trim() || '';
+    return name ? `${name} · ${th?.textContent.trim() || ''}` : (th?.textContent.trim() || '');
+  }
+  const lab = el.closest('label, .field');
+  if (lab) {
+    const own = [...lab.childNodes].filter(n => n.nodeType === 3 || n.classList?.contains('flabel')).map(n => n.textContent).join(' ').trim();
+    if (own) return own;
+  }
+  const sec = el.closest('section, .card');
+  return sec?.querySelector('h2')?.textContent.trim() || '';
+}
+
+// markField: tandai field (selector/elemen), pesan di bawahnya; focus = scroll + kursor ke situ.
+function markField(target, msg, {focus = true} = {}) {
+  const el = typeof target === 'string' ? document.querySelector(target) : target;
+  if (!el) return false;
+  el.classList.add('invalid');
+  el.setAttribute('aria-invalid', 'true');
+  const box = el.closest('label, .field, td') || el;
+  const p = document.createElement('p');
+  p.className = 'ferr'; p.textContent = msg || t('checkField');
+  if (box === el) el.after(p); else box.append(p);
+  const clear = () => {
+    el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); p.remove();
+    const item = document.querySelector(`#formErrors [data-for="${el.dataset.errId}"]`);
+    if (item) { item.remove(); if (!document.querySelector('#formErrors li')) document.querySelector('#formErrors')?.remove(); }
+  };
+  el.addEventListener('input', clear, {once: true});
+  el.addEventListener('change', clear, {once: true});
+  if (focus) focusField(el);
+  return true;
+}
+function focusField(el) {
+  el.scrollIntoView({block: 'center', behavior: 'smooth'});
+  const f = el.matches('input,select,textarea,button') ? el : el.querySelector('input,select,textarea,button');
+  if (f) setTimeout(() => f.focus({preventScroll: true}), 300);
+}
+
+// Kotak merah yang menetap di dekat tombol simpan: daftar semua yang salah, klik → lompat ke field.
+// Letaknya sebelum elemen [data-errors-anchor] (baris tombol). items: [{el, label, msg}] atau [{msg}].
+let errSeq = 0;
+function showErrorSummary(items, anchor) {
+  document.querySelector('#formErrors')?.remove();
+  const where = (typeof anchor === 'string' ? document.querySelector(anchor) : anchor) || document.querySelector('[data-errors-anchor]');
+  if (!where || !items.length) return;
+  const box = document.createElement('div');
+  box.id = 'formErrors'; box.className = 'banner bad errsum'; box.setAttribute('role', 'alert');
+  box.innerHTML = `<b>${esc(t('fixBelow'))}</b><ul></ul>`;
+  for (const it of items) {
+    const li = document.createElement('li');
+    if (it.el) {
+      it.el.dataset.errId = it.el.dataset.errId || 'e' + (++errSeq);
+      li.dataset.for = it.el.dataset.errId;
+      li.innerHTML = `<a href="#" role="button">${it.label ? `<b>${esc(it.label)}</b>: ` : ''}${esc(it.msg)}</a>`;
+      li.querySelector('a').onclick = ev => { ev.preventDefault(); focusField(it.el); };
+    } else li.textContent = it.msg;
+    box.querySelector('ul').append(li);
+  }
+  if (where.matches('.sticky-actions')) where.prepend(box); else where.before(box);
+}
+
+// checkRequired: [[selector|elemen, pesan?, cek?, label?]] — tandai SEMUA yang salah, lompat ke yang pertama,
+// tampilkan ringkasan di dekat tombol. true = semua oke.
+function checkRequired(rules, anchor) {
+  clearFieldErrors();
+  const bad = [];
+  for (const [sel, msg, test, label] of rules) {
+    const el = typeof sel === 'string' ? document.querySelector(sel) : sel;
+    if (!el) continue;
+    const ok = test ? test(el) : String(el.value ?? '').trim() !== '';
+    if (!ok) bad.push({el, msg: msg || t('required'), label: label || fieldName(el)});
+  }
+  if (!bad.length) return true;
+  bad.forEach((b, i) => markField(b.el, b.msg, {focus: i === 0}));
+  showErrorSummary(bad, anchor);
+  toast(bad.length === 1 ? `${bad[0].label}: ${bad[0].msg}` : t('fixN', {n: bad.length}));
+  return false;
+}
+
+// showError: error dari server. fields: {field_server: selector} atau fungsi(field) → selector.
+// Field yang dikenal ditandai; apa pun yang terjadi, pesan tetap tampil di ringkasan (bukan hanya toast).
+function showError(e, fields, anchor) {
+  clearFieldErrors();
+  const msg = errMsg(e);
+  let el = null;
+  if (e && fields) {
+    const key = e.field || ({outside_service_area: '_location', upload_not_found: 'media', upload_type: 'media'})[e.code];
+    if (key) {
+      const sel = typeof fields === 'function' ? fields(key) : (fields[key] || fields[key.replace(/\[\d+\].*$/, '')]);
+      el = sel ? (typeof sel === 'string' ? document.querySelector(sel) : sel) : null;
+    }
+  }
+  // Pesan validasi dari server berbahasa Indonesia; tampilkan apa adanya sebagai detail di bawah pesan umum.
+  const detail = e?.code === 'validation' && e.message ? e.message : '';
+  if (el) {
+    markField(el, detail || t('checkField'));
+    showErrorSummary([{el, label: fieldName(el), msg: detail || t('checkField')}], anchor);
+    toast(`${fieldName(el)}: ${detail || t('checkField')}`);
+  } else {
+    showErrorSummary([{msg: e?.field ? `${e.field}: ${e.message}` : msg}], anchor);
+    toast(msg);
+  }
+}
+
 function errMsg(e) { return t('err_' + e.code) !== 'err_' + e.code ? t('err_' + e.code) : (e.field ? `${e.field}: ${e.message}` : e.message); }
 
 // ---- Login (Telegram / SMS) ----

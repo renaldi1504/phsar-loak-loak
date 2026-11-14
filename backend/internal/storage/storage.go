@@ -72,3 +72,6 @@ func (l Local) PublicURL(key string) string {
 	}
 	return strings.TrimRight(l.BaseURL, "/") + "/" + key
 }
+
+// Path: lokasi file di disk (hanya untuk penyimpanan lokal; dipakai ffprobe saat upload).
+func (l Local) Path(key string) (string, error) { return l.path(key) }
