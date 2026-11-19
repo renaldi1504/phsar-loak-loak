@@ -744,6 +744,32 @@ body:has(.buybar) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 .watch-feed::-webkit-scrollbar { display: none; }
 .watch-item { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; display: flex; align-items: center; justify-content: center; overflow: hidden; }
 .watch-item video { width: 100%; height: 100%; object-fit: contain; background: #0d1b33; }
+/* Reel foto: produk tanpa video tampil seperti video — foto bergantian dengan zoom & geser pelan (Ken Burns). */
+.watch-reel { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0d1b33; cursor: pointer; }
+.reel-slide { position: absolute; inset: 0; opacity: 0; transition: opacity .7s ease; }
+.reel-slide.on { opacity: 1; }
+.reel-bg { position: absolute; inset: -40px; background-size: cover; background-position: center; filter: blur(28px) brightness(.55); transform: scale(1.1); }
+.reel-slide img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; transform-origin: 50% 50%; will-change: transform; }
+.reel-slide.on img { animation: kb1 3.6s ease-out both; }
+.reel-slide:nth-child(2n).on img { animation-name: kb2; }
+.reel-slide:nth-child(3n).on img { animation-name: kb3; }
+.watch-reel.one .reel-slide.on img { animation: kb1 5s ease-in-out infinite alternate; }
+.watch-reel.paused .reel-slide img, .watch-reel.paused .reel-bars b { animation-play-state: paused !important; }
+@keyframes kb1 { from { transform: scale(1) translate(0, 0); } to { transform: scale(1.14) translate(-2%, -2%); } }
+@keyframes kb2 { from { transform: scale(1.14) translate(2%, 1%); } to { transform: scale(1) translate(0, 0); } }
+@keyframes kb3 { from { transform: scale(1.04) translate(-3%, 2%); } to { transform: scale(1.16) translate(2%, -1%); } }
+.reel-bars { position: absolute; top: 132px; left: 12px; right: 12px; display: flex; gap: 4px; z-index: 2; }
+.reel-bars i { flex: 1; height: 3px; border-radius: 3px; background: rgba(255,255,255,.3); overflow: hidden; }
+.reel-bars b { display: block; height: 100%; width: 0; background: #fff; }
+.reel-bars i.done b { width: 100%; }
+.reel-bars i.now b { animation: reelbar var(--reel-ms, 3200ms) linear forwards; }
+@keyframes reelbar { from { width: 0; } to { width: 100%; } }
+.reel-tag { position: absolute; right: 12px; bottom: 190px; z-index: 2; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; background: rgba(13,27,51,.55); color: #fff; font-size: 12px; font-weight: 700; }
+.reel-tag .g { width: 16px; height: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  .reel-slide.on img, .watch-reel.one .reel-slide.on img { animation: none; }
+  .reel-slide { transition: none; }
+}
 .watch-sound { position: absolute; right: 12px; bottom: 190px; width: 46px; height: 46px; border-radius: 999px; border: 0; background: rgba(255,255,255,.18); color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .watch-sound.on { background: var(--pink); }
 .watch-sound .g { width: 20px; height: 20px; }

@@ -107,6 +107,36 @@
       });
     }, { threshold: 0.7 });
     $$("video[data-watch]", feed).forEach(function (v) { wio.observe(v); });
+    // Reel foto (produk tanpa video): foto bergantian setiap ±3 detik selama terlihat; klik = jeda/lanjut.
+    var REEL_MS = 3200;
+    function reelShow(r, n) {
+      var sl = $$(".reel-slide", r), bars = $$(".reel-bars i", r);
+      r._i = n % sl.length;
+      sl.forEach(function (x, k) { x.classList.toggle("on", k === r._i); });
+      bars.forEach(function (b, k) {
+        b.classList.remove("now"); b.classList.toggle("done", k < r._i);
+        if (k === r._i) { void b.offsetWidth; b.classList.add("now"); }
+      });
+      var img = sl[r._i].querySelector("img");
+      if (img && img.loading === "lazy") img.loading = "eager";
+      var nx = sl[(r._i + 1) % sl.length].querySelector("img");
+      if (nx && nx.loading === "lazy") nx.loading = "eager";
+    }
+    function reelPlay(r) {
+      reelStop(r);
+      var sl = $$(".reel-slide", r);
+      r.classList.remove("paused");
+      if (sl.length < 2) return;
+      r._t = setInterval(function () { reelShow(r, (r._i || 0) + 1); }, REEL_MS);
+    }
+    function reelStop(r) { if (r._t) { clearInterval(r._t); r._t = null; } }
+    var rio = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) {
+        var r = en.target;
+        if (en.isIntersecting) { reelShow(r, 0); reelPlay(r); } else { reelStop(r); }
+      });
+    }, { threshold: 0.7 });
+    $$("[data-reel]", feed).forEach(function (r) { r.style.setProperty("--reel-ms", REEL_MS + "ms"); rio.observe(r); });
     feed.addEventListener("click", function (e) {
       var b = e.target.closest("[data-sound]");
       if (b) {
@@ -116,7 +146,9 @@
         return;
       }
       var v = e.target.closest("video");
-      if (v) { if (v.paused) v.play(); else v.pause(); }
+      if (v) { if (v.paused) v.play(); else v.pause(); return; }
+      var rl = e.target.closest("[data-reel]");
+      if (rl) { if (rl._t) { reelStop(rl); rl.classList.add("paused"); } else reelPlay(rl); }
     });
   }
   // Panah geser untuk rail video.

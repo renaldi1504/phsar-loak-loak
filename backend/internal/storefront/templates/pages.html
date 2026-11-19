@@ -342,8 +342,13 @@ p{margin:0;color:var(--muted)}
   </div>
   {{if $d.Items}}<div class="watch-feed" id="watchFeed">
     {{range $i, $it := $d.Items}}<article class="watch-item">
-      <video data-watch src="{{$it.Video}}" {{if $it.PosterURL}}poster="{{$it.PosterURL}}"{{end}} playsinline loop muted preload="{{if eq $i 0}}auto{{else}}none{{end}}"></video>
+      {{if $it.Video}}<video data-watch src="{{$it.Video}}" {{if $it.PosterURL}}poster="{{$it.PosterURL}}"{{end}} playsinline loop muted preload="{{if eq $i 0}}auto{{else}}none{{end}}"></video>
       <button type="button" class="watch-sound" data-sound aria-label="{{$p.T "watchMuted"}}">{{glyph "sound" "mono"}}</button>
+      {{else}}<div class="watch-reel{{if eq (len $it.Photos) 1}} one{{end}}" data-reel role="img" aria-label="{{$it.Name}}">
+        {{range $k, $ph := $it.Photos}}<div class="reel-slide{{if eq $k 0}} on{{end}}"><div class="reel-bg" style="background-image:url('{{$ph}}')"></div><img src="{{$ph}}" alt="" {{if or (gt $i 1) (gt $k 0)}}loading="lazy"{{end}}></div>{{end}}
+        {{if gt (len $it.Photos) 1}}<div class="reel-bars" aria-hidden="true">{{range $it.Photos}}<i><b></b></i>{{end}}</div>{{end}}
+        <span class="reel-tag">{{glyph "camera" "mono"}}{{$p.T "watchPhotos"}}</span>
+      </div>{{end}}
       <div class="watch-info">
         <a class="watch-store" href="{{$p.U "/s/"}}{{$it.StoreSlug}}"><span class="store-ico">{{glyph "store"}}</span>{{$it.StoreName}}</a>
         <div class="watch-card">

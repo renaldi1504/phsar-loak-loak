@@ -93,10 +93,21 @@ func TestCategoryTilesAndSeasons(t *testing.T) {
 		e.drainMedia(t)
 		w := page("/en/c/womens-fashion/watch")
 		check(t, strings.Contains(w, `class="watch"`) && strings.Contains(w, "noindex"), "halaman Tonton")
-		if e.scalar(t, `SELECT count(*) FROM product_media WHERE product_id = $1 AND kind = 'video' AND video_url IS NOT NULL`, s.productID) != "0" {
-			check(t, strings.Contains(w, "Tiles linen shirt") && strings.Contains(w, "data-watch"), "video produk tampil di Tonton")
-			check(t, strings.Contains(page("/en/c/womens-tops/watch"), "Tiles linen shirt"), "Tonton per subkategori")
+		// Semua produk muncul: ber-video → <video>, tanpa video → reel foto bergerak.
+		check(t, strings.Contains(w, "Tiles linen shirt"), "produk tampil di Tonton")
+		check(t, strings.Contains(page("/en/c/womens-tops/watch"), "Tiles linen shirt"), "Tonton per subkategori")
+		if e.scalar(t, `SELECT count(*) FROM product_media WHERE product_id = $1 AND kind = 'video' AND deleted_at IS NULL`, s.productID) != "0" {
+			check(t, strings.Contains(w, "data-watch"), "produk ber-video diputar videonya")
 		}
+		// Video yang belum dikompres (video_url kosong, mis. data demo) tetap diputar dari file aslinya.
+		e.sql(t, `UPDATE product_media SET deleted_at = now() WHERE product_id = $1 AND kind = 'video' AND deleted_at IS NULL`, s.productID)
+		w = page("/en/c/womens-tops/watch")
+		check(t, strings.Contains(w, "Tiles linen shirt") && strings.Contains(w, "data-reel") && strings.Contains(w, "reel-slide on"), "tanpa video: reel foto")
+		e.sql(t, `INSERT INTO product_media (product_id, kind, storage_key, sort_order, processing) VALUES ($1, 'video', 'public/products/qa-raw-only.mp4', 99, 'ready')`, s.productID)
+		w = page("/en/c/womens-tops/watch")
+		check(t, strings.Contains(w, "qa-raw-only.mp4") && strings.Contains(w, "data-watch"), "video tanpa video_url tetap diputar")
+		e.sql(t, `DELETE FROM product_media WHERE product_id = $1 AND storage_key = 'public/products/qa-raw-only.mp4'`, s.productID)
+		e.sql(t, `UPDATE product_media SET deleted_at = NULL WHERE product_id = $1 AND kind = 'video' AND deleted_at > now() - interval '5 minutes'`, s.productID)
 		check(t, strings.Contains(page("/en/c/womens-tops/watch"), `aria-current="page">Tops`), "Tonton subkategori: chip saudara aktif")
 		check(t, e.page(t, "/en/c/fashion/watch").Status == 301, "ID/slug lama dialihkan ke slug bahasa ini")
 		e.page(t, "/en/c/nope/watch").want(404)

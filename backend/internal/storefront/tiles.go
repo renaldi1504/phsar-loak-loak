@@ -66,15 +66,17 @@ func (c *Catalog) CategoryTiles(ctx context.Context, lang string, cats []Categor
 	return out, nil
 }
 
-// WatchItem: satu video di feed Tonton.
+// WatchItem: satu produk di feed Tonton — video kalau ada, kalau tidak "reel" foto (geser otomatis + zoom pelan).
 type WatchItem struct {
 	Card
-	Video string
+	Video  string
+	Photos []string // dipakai kalau Video kosong (maks. 5 foto)
 }
 
-// WatchFeed: video produk di kategori (atau subkategori) itu, terbaru dulu.
+// WatchFeed: semua produk di kategori (atau subkategori) itu, terbaru dulu. Produk ber-video diputar videonya;
+// produk tanpa video tampil sebagai reel foto supaya feed tetap penuh.
 func (c *Catalog) WatchFeed(ctx context.Context, lang, categoryID string, limit int) ([]WatchItem, error) {
-	cards, err := c.cards(ctx, lang, inCategory("$2")+` AND vm.id IS NOT NULL`, "p.published_at DESC NULLS LAST, p.id", limit, categoryID)
+	cards, err := c.cards(ctx, lang, inCategory("$2"), "p.published_at DESC NULLS LAST, p.id", limit, categoryID)
 	if err != nil || len(cards) == 0 {
 		return []WatchItem{}, err
 	}
@@ -82,28 +84,64 @@ func (c *Catalog) WatchFeed(ctx context.Context, lang, categoryID string, limit 
 	for i, k := range cards {
 		ids[i] = k.ID
 	}
-	rows, err := c.Pool.Query(ctx, `SELECT DISTINCT ON (product_id) product_id::text, video_url FROM product_media
-		WHERE product_id = ANY($1::uuid[]) AND kind = 'video' AND deleted_at IS NULL AND video_url IS NOT NULL
+	// Video: hasil kompres (video_url) kalau sudah ada, kalau belum file asli (storage_key) — sama seperti halaman produk.
+	rows, err := c.Pool.Query(ctx, `SELECT DISTINCT ON (product_id) product_id::text, coalesce(nullif(video_url, ''), storage_key) FROM product_media
+		WHERE product_id = ANY($1::uuid[]) AND kind = 'video' AND deleted_at IS NULL
 		ORDER BY product_id, sort_order`, ids)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
 	urls := map[string]string{}
 	for rows.Next() {
 		var id, u string
 		if err := rows.Scan(&id, &u); err != nil {
+			rows.Close()
 			return nil, err
 		}
 		urls[id] = c.url(u)
 	}
-	out := []WatchItem{}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	var noVideo []string
 	for _, k := range cards {
-		if u := urls[k.ID]; u != "" {
-			out = append(out, WatchItem{Card: k, Video: u})
+		if urls[k.ID] == "" {
+			noVideo = append(noVideo, k.ID)
 		}
 	}
-	return out, rows.Err()
+	photos := map[string][]string{}
+	if len(noVideo) > 0 {
+		prow, err := c.Pool.Query(ctx, `SELECT product_id::text, coalesce(image_url, storage_key) FROM (
+			SELECT product_id, image_url, storage_key, row_number() OVER (PARTITION BY product_id ORDER BY sort_order) AS n
+			FROM product_media WHERE product_id = ANY($1::uuid[]) AND kind = 'photo' AND deleted_at IS NULL) m
+			WHERE n <= 5 ORDER BY product_id, n`, noVideo)
+		if err != nil {
+			return nil, err
+		}
+		for prow.Next() {
+			var id, u string
+			if err := prow.Scan(&id, &u); err != nil {
+				prow.Close()
+				return nil, err
+			}
+			photos[id] = append(photos[id], c.url(u))
+		}
+		prow.Close()
+		if err := prow.Err(); err != nil {
+			return nil, err
+		}
+	}
+	out := make([]WatchItem, 0, len(cards))
+	for _, k := range cards {
+		switch {
+		case urls[k.ID] != "":
+			out = append(out, WatchItem{Card: k, Video: urls[k.ID]})
+		case len(photos[k.ID]) > 0:
+			out = append(out, WatchItem{Card: k, Photos: photos[k.ID]})
+		}
+	}
+	return out, nil
 }
 
 // SearchCards: produk untuk kategori musiman berbasis kata pencarian.
