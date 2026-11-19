@@ -11,14 +11,28 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"phsar/internal/auth"
+	"phsar/internal/hours"
 	"phsar/internal/media"
+	"phsar/internal/paging"
 	"phsar/internal/storage"
 )
 
 type Handler struct {
+	Orders   http.Handler     // pesanan toko (paket shop); dipasang di /stores/{storeID}/orders
+	Payouts  http.Handler     // saldo & payout (paket payout); khusus pemilik
+	Returns  http.Handler     // retur & sengketa (paket returns)
+	Strikes  http.HandlerFunc // reports: strike toko (hanya baca)
+	Tickets  http.Handler     // support: tiket bantuan toko (paket tickets)
+	Ads      http.Handler     // ads: iklan bersponsor (paket ads); khusus pemilik
+	Flash    http.Handler     // flash: sesi flash sale (paket flash); khusus pemilik
+	Askbot   http.Handler     // askbot: draf jawaban pembeli + FAQ toko (paket askbot); pemilik & staf
+	Chat     http.Handler     // chat: chat pembeli ↔ toko (paket chat); pemilik & staf
 	svc      *Service
 	uploader storage.Uploader
 	log      *slog.Logger
+
+	// courierreturn: paket gagal antar yang dikembalikan ke toko (pemilik & staf)
+	CourierReturns http.Handler
 }
 
 func NewHandler(svc *Service, up storage.Uploader, log *slog.Logger) *Handler {
@@ -36,6 +50,9 @@ func (h *Handler) Routes() http.Handler {
 	r.Route("/stores/{storeID}", func(r chi.Router) {
 		r.Use(h.member)
 		r.Get("/", h.getStore)
+		r.Get("/today", h.today) // Seller Center v2: layar "Hari ini"
+		r.Get("/hours", h.getHours)
+		r.With(ownerOnly).Put("/hours", h.putHours)
 		r.With(ownerOnly).Patch("/", h.updateStore)
 		r.With(ownerOnly).Post("/submit", h.submit)
 		r.With(ownerOnly).Get("/kyc", h.getKYC)
@@ -60,6 +77,37 @@ func (h *Handler) Routes() http.Handler {
 		r.With(ownerOnly).Post("/invites", h.createInvite)
 		r.With(ownerOnly).Delete("/invites/{inviteID}", h.revokeInvite)
 		r.Delete("/members/{userID}", h.removeMember) // owner menghapus staf, atau staf keluar sendiri
+		// Pesanan: pemilik dan staf.
+		if h.Orders != nil {
+			r.Mount("/orders", h.Orders)
+		}
+		if h.Strikes != nil { // reports:
+			r.Get("/strikes", h.Strikes)
+		}
+		if h.Tickets != nil { // support
+			r.Mount("/tickets", h.Tickets)
+		}
+		if h.Returns != nil {
+			r.Mount("/returns", h.Returns)
+		}
+		if h.Askbot != nil { // askbot:
+			r.Mount("/assist", h.Askbot)
+		}
+		if h.Chat != nil { // chat:
+			r.Mount("/chat", h.Chat)
+		}
+		if h.CourierReturns != nil { // courierreturn
+			r.Mount("/courier-returns", h.CourierReturns)
+		}
+		if h.Flash != nil { // flash
+			r.With(ownerOnly).Mount("/flash", h.Flash)
+		}
+		if h.Ads != nil { // ads
+			r.With(ownerOnly).Mount("/ads", h.Ads)
+		}
+		if h.Payouts != nil {
+			r.With(ownerOnly).Mount("/payouts", h.Payouts)
+		}
 	})
 	return r
 }
@@ -149,6 +197,11 @@ func (h *Handler) createStore(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) getStore(w http.ResponseWriter, r *http.Request) {
 	st, err := h.svc.GetStore(r.Context(), chi.URLParam(r, "storeID"))
 	st.Role, _ = r.Context().Value(roleKey{}).(string)
+	if err == nil {
+		if c, cerr := h.svc.Commission(r.Context(), st.ID); cerr == nil {
+			st.Commission = &c
+		}
+	}
 	h.respond(w, http.StatusOK, st, err)
 }
 
@@ -213,9 +266,12 @@ func (h *Handler) deletePickup(w http.ResponseWriter, r *http.Request) {
 	h.respond(w, http.StatusOK, map[string]any{"pickup_points": l}, err)
 }
 
+// listProducts: ?filter=&q=&sort=&page=&size= (tanpa page: semua, maks. 500 — aplikasi lama).
 func (h *Handler) listProducts(w http.ResponseWriter, r *http.Request) {
-	l, err := h.svc.ListProducts(r.Context(), chi.URLParam(r, "storeID"), r.URL.Query().Get("filter"))
-	h.respond(w, http.StatusOK, map[string]any{"products": l}, err)
+	q := r.URL.Query()
+	l, err := h.svc.ListProducts(r.Context(), chi.URLParam(r, "storeID"), ProductQuery{
+		Filter: q.Get("filter"), Sort: q.Get("sort"), Page: paging.FromRequest(r, 24, 100)})
+	h.respond(w, http.StatusOK, l, err)
 }
 
 func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {
@@ -339,9 +395,12 @@ func (h *Handler) respond(w http.ResponseWriter, status int, v any, err error) {
 
 func (h *Handler) fail(w http.ResponseWriter, err error) {
 	var ve validationError
+	var he hours.FieldError
 	switch {
 	case errors.As(err, &ve):
 		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": map[string]string{"code": "validation", "field": ve.field, "message": ve.msg}})
+	case errors.As(err, &he):
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": map[string]string{"code": "validation", "field": he.Field, "message": he.Msg}})
 	case errors.Is(err, ErrNotMember):
 		writeErr(w, http.StatusNotFound, "store_not_found", err.Error()) // jangan bocorkan toko orang lain ada
 	case errors.Is(err, ErrNotFound):

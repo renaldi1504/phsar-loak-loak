@@ -1,7 +1,7 @@
 'use strict';
 P.authBase = '/admin/auth';
 addStrings({
-  en: {appName: 'Admin', logout: 'Sign out', queue: 'Store verification', notAdmin: 'This account is not a Phsar admin.',
+  en: {appName: 'Admin', sellersDesc: 'Verify identity and pickup points before a seller can receive orders.', pickStore: 'Choose a store on the left.', auditNote: 'Opening ID documents is recorded in the audit log.', logout: 'Sign out', queue: 'Store verification', notAdmin: 'This account is not a Phsar admin.',
     f_pending_review: 'Waiting for review', f_onboarding: 'Setting up', f_active: 'Active', store: 'Store', owner: 'Owner', kyc: 'KYC', pickups: 'Pickup points', submitted: 'Submitted',
     empty: 'Nothing here.', back: '← Queue', about: 'About', social: 'Social links', identity: 'Identity (KYC)', sellerType: 'Seller type', legalName: 'Legal name',
     viewDoc: 'Open ID document', tin: 'TIN', moc: 'MoC licence', status: 'Status', approve: 'Approve', reject: 'Reject', notePh: 'Reason (shown to the seller)',
@@ -9,7 +9,7 @@ addStrings({
     verified: 'Verified', notVerified: 'Not verified', contact: 'Contact', hours: 'Hours', openMap: 'Open in Google Maps', done: 'Saved',
     st_onboarding: 'Setting up', st_pending_review: 'Under review', st_active: 'Active', st_suspended: 'Suspended',
     t_individual_unregistered: 'Individual (not tax-registered)', t_individual_registered: 'Individual (tax-registered)', t_company: 'Company', kyc_missing: 'Not submitted', kyc_pending: 'Pending', kyc_verified: 'Verified', kyc_rejected: 'Rejected', err_not_ready: 'Verify KYC and a pickup point first.'},
-  km: {appName: 'អ្នកគ្រប់គ្រង', logout: 'ចាកចេញ', queue: 'ផ្ទៀងផ្ទាត់ហាង', notAdmin: 'គណនីនេះមិនមែនជាអ្នកគ្រប់គ្រង Phsar ទេ។',
+  km: {appName: 'អ្នកគ្រប់គ្រង', sellersDesc: 'ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ និងទីតាំងទទួល មុនពេលអ្នកលក់អាចទទួលការបញ្ជាទិញ។', pickStore: 'ជ្រើសហាងនៅខាងឆ្វេង។', auditNote: 'ការបើកឯកសារអត្តសញ្ញាណត្រូវបានកត់ក្នុងកំណត់ហេតុសវនកម្ម។', logout: 'ចាកចេញ', queue: 'ផ្ទៀងផ្ទាត់ហាង', notAdmin: 'គណនីនេះមិនមែនជាអ្នកគ្រប់គ្រង Phsar ទេ។',
     f_pending_review: 'រង់ចាំពិនិត្យ', f_onboarding: 'កំពុងរៀបចំ', f_active: 'សកម្ម', store: 'ហាង', owner: 'ម្ចាស់', kyc: 'KYC', pickups: 'ទីតាំងទទួល', submitted: 'បានដាក់',
     empty: 'គ្មានទិន្នន័យ។', back: '← បញ្ជីរង់ចាំ', about: 'អំពី', social: 'បណ្តាញសង្គម', identity: 'អត្តសញ្ញាណ (KYC)', sellerType: 'ប្រភេទអ្នកលក់', legalName: 'ឈ្មោះស្របច្បាប់',
     viewDoc: 'បើកឯកសារអត្តសញ្ញាណ', tin: 'TIN', moc: 'អាជ្ញាប័ណ្ណ MoC', status: 'ស្ថានភាព', approve: 'អនុម័ត', reject: 'បដិសេធ', notePh: 'មូលហេតុ (អ្នកលក់មើលឃើញ)',
@@ -17,7 +17,7 @@ addStrings({
     verified: 'បានផ្ទៀងផ្ទាត់', notVerified: 'មិនទាន់ផ្ទៀងផ្ទាត់', contact: 'ទំនាក់ទំនង', hours: 'ម៉ោង', openMap: 'បើកក្នុង Google Maps', done: 'បានរក្សាទុក',
     st_onboarding: 'កំពុងរៀបចំ', st_pending_review: 'កំពុងពិនិត្យ', st_active: 'សកម្ម', st_suspended: 'ផ្អាក',
     t_individual_unregistered: 'បុគ្គល (មិនទាន់ចុះបញ្ជីពន្ធ)', t_individual_registered: 'បុគ្គល (បានចុះបញ្ជីពន្ធ)', t_company: 'ក្រុមហ៊ុន', kyc_missing: 'មិនទាន់ដាក់', kyc_pending: 'រង់ចាំ', kyc_verified: 'បានផ្ទៀងផ្ទាត់', kyc_rejected: 'បានបដិសេធ', err_not_ready: 'សូមផ្ទៀងផ្ទាត់ KYC និងទីតាំងទទួលជាមុនសិន។'},
-  zh: {appName: '管理后台', logout: '退出', queue: '店铺审核', notAdmin: '此账号不是 Phsar 管理员。',
+  zh: {appName: '管理后台', sellersDesc: '卖家接单前，请核实身份和取件点。', pickStore: '请在左侧选择店铺。', auditNote: '打开身份证件会记录在审计日志中。', logout: '退出', queue: '店铺审核', notAdmin: '此账号不是 Phsar 管理员。',
     f_pending_review: '待审核', f_onboarding: '设置中', f_active: '已上线', store: '店铺', owner: '店主', kyc: 'KYC', pickups: '取件点', submitted: '提交时间',
     empty: '暂无数据。', back: '← 审核队列', about: '介绍', social: '社交链接', identity: '身份验证 (KYC)', sellerType: '卖家类型', legalName: '证件姓名',
     viewDoc: '打开身份证件', tin: '税号', moc: '商业部许可证', status: '状态', approve: '通过', reject: '拒绝', notePh: '原因（卖家可见）',
@@ -31,35 +31,79 @@ const A = {filter: 'pending_review', map: null};
 const chip = (cls, text) => `<span class="chip ${cls}">${esc(text)}</span>`;
 const kycCls = s => ({pending: 'warn', verified: 'ok', rejected: 'bad'})[s] || '';
 
-function shell(inner) {
-  return `<header class="top"><a class="brand" href="#/">${brandSVG}<span><b>Phsar</b><small>${esc(t('appName')).toUpperCase()}</small></span></a>
-    <div class="top-actions">${langSwitch()}${P.token ? `<button type="button" onclick="logout()">${t('logout')}</button>` : ''}</div></header><main>${inner}</main>`;
-}
-
 async function render() {
   if (!P.token) {
-    $('#app').innerHTML = shell(loginView('Phsar ' + t('appName')));
-    bindLogin(() => { location.hash = '#/'; render(); });
+    $('#app').innerHTML = shell(loginView(t('signInTitle')));
+    bindLogin(() => { A.me = null; SH.at = 0; location.hash = '#/'; render(); });
     return;
   }
+  if (MFA.codes) return renderBackupCodes();
+  if (P.mfa && !P.mfa.verified) return renderMFA();
   const m = location.hash.match(/^#\/store\/([0-9a-f-]+)/), pm = location.hash.match(/^#\/product\/([0-9a-f-]+)/);
   try {
+    if (!A.me) A.me = await api('/admin/api/me');
+    await loadBadges();
+    SH.open = false;
+    const h = location.hash || '#/';
     if (pm) await renderProductDetail(pm[1]);
+    else if (h === '#/' || h === '#') await renderDashboard();
+    else if (h === '#/audit') await renderAudit();
+    else if (location.hash === '#/admins') await renderAdmins();
     else if (location.hash === '#/products') await renderProductQueue();
-    else if (m) await renderDetail(m[1]); else await renderQueue();
+    else if (location.hash === '#/refunds') await renderRefunds();
+    else if (location.hash === '#/delivery') await renderDelivery();
+    else if (location.hash === '#/payouts') await renderPayouts();
+    else if (location.hash === '#/gateway') await renderGateway();
+    else if (location.hash === '#/logins') await renderLogins();
+    else if (location.hash.startsWith('#/integrations')) await renderIntegrations();
+    else if (location.hash === '#/commission') await renderCommission();
+    else if (location.hash.startsWith('#/returns')) await renderReturns();
+    else if (location.hash === '#/legal') await renderLegal();
+    else if (location.hash.startsWith('#/reports')) await renderReports();
+    else if (location.hash.startsWith('#/support')) await renderSupport();
+    else if (location.hash.startsWith('#/chats')) await renderChats(); // chat:
+    else if (location.hash.startsWith('#/reconciliation')) await renderReconciliation();
+    else if (location.hash.startsWith('#/sweep')) await renderSweep();
+    else if (location.hash.startsWith('#/invoices')) await renderInvoices();
+    else if (location.hash.startsWith('#/ads')) await renderAds();
+    else if (location.hash.startsWith('#/promos')) await renderPromos();
+    else if (location.hash.startsWith('#/catalog')) await renderCatalog();
+    else if (location.hash.startsWith('#/content')) await renderContent();
+    else if (location.hash.startsWith('#/shipping')) await renderShipping();
+    else if (location.hash.startsWith('#/jobs')) await renderJobs();
+    else if (location.hash.startsWith('#/order-timing')) await renderOrderTiming();
+    else if (location.hash.startsWith('#/askbot')) await renderAskbot(); // askbot:
+    else if (location.hash.startsWith('#/customers')) await renderCustomers();
+    else if (location.hash.startsWith('#/order/')) await renderOrderDetail(decodeURIComponent(location.hash.slice(8)));
+    else if (location.hash.startsWith('#/payments')) await renderPayments();
+    else if (m) await renderDetail(m[1]); else if (h === '#/stores') await renderQueue(); else await renderDashboard();
   }
-  catch (e) { $('#app').innerHTML = shell(`<div class="banner bad">${e.code === 'not_admin' ? t('notAdmin') : esc(errMsg(e))}</div>`); }
+  catch (e) {
+    if (e.code === 'mfa_required') { P.mfa = {enrolled: true, verified: false}; if (await refreshSession()) return render(); }
+    $('#app').innerHTML = shell(`<div class="banner bad">${e.code === 'not_admin' ? t('notAdmin') : esc(errMsg(e))}</div>`);
+  }
+}
+
+async function storeList() {
+  const {stores} = await api('/admin/api/stores?status=' + A.filter);
+  A.stores = stores;
+  return stores;
+}
+function storeQueueHTML(stores, cur) {
+  return stores.map(s => `<a class="qcard" href="#/store/${s.id}" aria-current="${s.id === cur}"><span class="t"><b>${esc(s.name)}</b><small>${s.submitted_at ? ago(s.submitted_at) : ''}</small></span>
+    <span class="s">${esc(s.owner_name || '')} ${esc(s.owner_phone)}</span>
+    <span class="c">${chip(kycCls(s.kyc), 'KYC: ' + t('kyc_' + s.kyc))}${chip(s.pickup_points ? '' : 'warn', t('pickups') + ' ' + s.pickup_points)}</span></a>`).join('') || `<p class="muted">${t('empty')}</p>`;
+}
+function storeHead() {
+  return `${pageHead(t('i_sellers'), t('sellersDesc'))}
+    <div class="tabs count">${['pending_review', 'onboarding', 'active'].map(f => `<button type="button" aria-selected="${A.filter === f}" onclick="A.filter='${f}';location.hash='#/stores';render()">${t('f_' + f)}${f === 'pending_review' && SH.badges.stores ? ` <span>· ${SH.badges.stores}</span>` : ''}</button>`).join('')}</div>`;
 }
 
 async function renderQueue() {
-  const {stores} = await api('/admin/api/stores?status=' + A.filter);
-  const rows = stores.map(s => `<tr><td><a href="#/store/${s.id}"><b>${esc(s.name)}</b></a><br><span class="muted">${esc(s.slug)}</span></td>
-    <td>${esc(s.owner_name || '')} ${esc(s.owner_phone)}</td><td>${chip(kycCls(s.kyc), t('kyc_' + s.kyc))}</td><td>${s.pickup_points}</td>
-    <td class="muted">${s.submitted_at ? new Date(s.submitted_at).toLocaleString() : '—'}</td></tr>`).join('');
-  $('#app').innerHTML = shell(`${adminNav('stores')}<h1>${t('queue')}</h1>
-    <div class="tabs">${['pending_review', 'onboarding', 'active'].map(f => `<button type="button" aria-selected="${A.filter === f}" onclick="A.filter='${f}';render()">${t('f_' + f)}</button>`).join('')}</div>
-    <section class="card" style="overflow-x:auto">${stores.length ? `<table><thead><tr><th>${t('store')}</th><th>${t('owner')}</th><th>${t('kyc')}</th><th>${t('pickups')}</th><th>${t('submitted')}</th></tr></thead><tbody>${rows}</tbody></table>`
-      : `<p class="muted">${t('empty')}</p>`}</section>`);
+  const stores = await storeList();
+  if (stores.length && window.innerWidth > 1100) return renderDetail(stores[0].id, stores);
+  $('#app').innerHTML = shell(`${storeHead()}<div class="split"><div class="qlist">${storeQueueHTML(stores)}</div>
+    <div class="detail"><section class="card"><p class="muted">${stores.length ? t('pickStore') : t('empty')}</p></section></div></div>`);
 }
 
 function decisionBox(id) {
@@ -68,13 +112,13 @@ function decisionBox(id) {
     <button type="button" class="danger" data-act="reject" data-id="${id}">${t('reject')}</button></div>`;
 }
 
-async function renderDetail(id) {
-  const d = await api('/admin/api/stores/' + id);
+async function renderDetail(id, list) {
+  const [d, stores] = await Promise.all([api('/admin/api/stores/' + id), list ? Promise.resolve(list) : storeList()]);
   const st = d.store, k = d.kyc, pending = st.status === 'pending_review';
   const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  $('#app').innerHTML = shell(`<a href="#/">${t('back')}</a>
+  $('#app').innerHTML = shell(`${storeHead()}<div class="split"><div class="qlist">${storeQueueHTML(stores, id)}</div><div class="detail">
     <div class="spread"><div class="row"><img class="logo" src="${esc(st.logo_url || '')}" alt="" onerror="this.style.visibility='hidden'">
-      <div><h1>${esc(st.name)}</h1><p class="muted">${esc(st.slug)}</p></div></div>${chip({active: 'ok', pending_review: 'warn'}[st.status] || 'pink', t('st_' + st.status))}</div>
+      <div><h2 style="font-size:22px">${esc(st.name)}</h2><p class="muted">${esc(st.slug)}</p></div></div>${chip({active: 'ok', pending_review: 'warn'}[st.status] || 'pink', t('st_' + st.status))}</div>
     <section class="card"><h2>${t('about')}</h2>${Object.entries(st.about).map(([l, a]) => `<p><span class="chip">${l}</span> ${esc(a)}</p>`).join('') || '<p class="muted">—</p>'}
       <p class="muted">${t('social')}: ${Object.entries(st.social_links || {}).map(([s, v]) => `${esc(s)} ${esc(v)}`).join(' · ') || '—'}</p></section>
     <section class="card"><div class="spread"><h2>${t('identity')}</h2>${chip(kycCls(k?.verification_status), t('kyc_' + (k?.verification_status || 'missing')))}</div>
@@ -90,7 +134,8 @@ async function renderDetail(id) {
         ${p.note ? `<p class="muted">${esc(p.note)}</p>` : ''}${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="" style="max-width:240px;border-radius:16px">` : ''}
         <a href="https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lng}${p.google_place_id ? '&query_place_id=' + encodeURIComponent(p.google_place_id) : ''}" target="_blank" rel="noopener">${t('openMap')}</a>
         ${p.rejection_note ? `<div class="banner bad">${esc(p.rejection_note)}</div>` : ''}${p.verified ? '' : decisionBox('pp_' + p.id)}</div>`).join('')}</section>
-    ${pending ? `<section class="card"><h2>${t('storeDecision')}</h2><p class="muted">${t('storeHint')}</p>${decisionBox('store')}</section>` : ''}`);
+    ${pending ? `<section class="card"><h2>${t('storeDecision')}</h2><p class="muted">${t('storeHint')}</p>${decisionBox('store')}</section>` : ''}
+    <p class="muted small">${t('auditNote')}</p></div></div>`);
 
   if (d.pickup_points.length) Maps.markers($('#amap'), d.pickup_points.map(p => ({lat: p.lat, lng: p.lng, label: p.label})));
   else $('#amap').classList.add('hidden');
@@ -98,15 +143,15 @@ async function renderDetail(id) {
   if ($('#docBtn')) $('#docBtn').onclick = async () => {
     // Dokumen privat butuh token → ambil sebagai blob lalu buka di tab baru.
     const r = await fetch(d.id_document_url, {headers: {Authorization: 'Bearer ' + P.token}});
-    if (!r.ok) { toast(r.statusText); return; }
+    if (!r.ok) { toast(r.statusText, 'error'); return; }
     window.open(URL.createObjectURL(await r.blob()), '_blank', 'noopener');
   };
   document.querySelectorAll('[data-act]').forEach(b => b.onclick = async () => {
     const box = b.dataset.id, decision = b.dataset.act, note = $('#note_' + box).value.trim();
-    if (decision === 'reject' && !note) { toast(t('needNote')); return; }
+    if (decision === 'reject' && !note) { toast(t('needNote'), 'warning'); return; }
     const url = box === 'kyc' ? `/admin/api/stores/${id}/kyc` : box === 'store' ? `/admin/api/stores/${id}/decision`
       : `/admin/api/pickup-points/${box.slice(3)}/decision`;
-    try { await api(url, {method: 'POST', body: {decision, note}}); toast(t('done')); render(); } catch (e) { toast(errMsg(e)); }
+    try { await api(url, {method: 'POST', body: {decision, note}}); toast(t('done')); SH.at = 0; render(); } catch (e) { toast(errMsg(e), 'error'); }
   });
 }
 

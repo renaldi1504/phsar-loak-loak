@@ -1,0 +1,134 @@
+{{define "product"}}{{template "top" .}}{{$p := .}}{{$x := .Data.P}}
+<div class="backbar"><div class="wrap backbar-in">
+  <nav class="crumbs" aria-label="breadcrumb"><a class="back" href="{{.U "/"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg>{{.T "home"}}</a> <span aria-hidden="true">›</span> {{if $x.ParentSlug}}<a href="{{.U "/c/"}}{{$x.ParentSlug}}">{{$x.ParentName}}</a> <span aria-hidden="true">›</span> {{end}}<a href="{{.U "/c/"}}{{$x.CategorySlug}}">{{$x.CategoryName}}</a></nav>
+  {{if has $x.Media "video"}}<span class="real-video">{{glyph "video"}}{{.T "productVideo"}}</span>{{end}}
+</div></div>
+<div class="wrap pd">
+
+  <div class="pd-grid">
+    <section class="gallery" aria-label="{{.T "productVideo"}}">
+      <div class="stage" id="stage">
+        {{if $x.Media}}{{with index $x.Media 0}}{{if eq .Kind "video"}}
+        <video src="{{.URL}}" {{if .PosterURL}}poster="{{.PosterURL}}"{{end}} controls playsinline preload="metadata" aria-label="{{$p.T "productVideo"}}"></video>
+        {{else}}<img src="{{.URL}}" alt="{{$x.Name}}">{{end}}{{end}}{{end}}
+      </div>
+      {{if gt (len $x.Media) 1}}
+      <div class="thumbs" role="list">
+        {{range $i, $m := $x.Media}}{{if ne $m.Kind "defect_photo"}}
+        <button type="button" class="thumb{{if eq $i 0}} on{{end}}" role="listitem" data-kind="{{$m.Kind}}" data-src="{{$m.URL}}" data-poster="{{$m.PosterURL}}" aria-label="{{if eq $m.Kind "video"}}{{$p.T "productVideo"}}{{else}}{{$p.T "photo"}} {{add $i 1}}{{end}}">
+          {{if eq $m.Kind "video"}}{{if $m.PosterURL}}<img src="{{$m.PosterURL}}" alt="" loading="lazy">{{end}}<span class="tplay"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg></span>
+          {{else}}<img src="{{$m.URL}}" alt="" loading="lazy">{{end}}
+        </button>
+        {{end}}{{end}}
+      </div>
+      {{end}}
+    </section>
+
+    <section class="info">
+      <a class="store-link" href="{{.U "/s/"}}{{$x.Store.Slug}}">
+        <span class="store-ico">{{if $x.Store.LogoURL}}<img src="{{$x.Store.LogoURL}}" alt="">{{else}}{{glyph "store"}}{{end}}</span>{{$x.Store.Name}}<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg>
+      </a>
+      <h1>{{$x.Name}}</h1>
+
+      <div class="price-row">
+        <span class="price" id="price">{{if ne $x.MinPrice $x.MaxPrice}}<small>{{.T "from"}}</small> {{end}}${{money2 $x.MinPrice}}</span>
+        <span class="usd">USD</span>
+        <s class="compare" id="compare" {{if not $x.Compare}}hidden{{end}}>{{if $x.Compare}}${{money $x.Compare}}{{end}}</s>
+        {{with pct $x.MinPrice $x.Compare}}<span class="off" id="off">-{{.}}%</span>{{end}}
+      </div>
+      <p class="riel" id="riel">{{rielOnly . $x.MinPrice}}</p>
+      {{with $x.FlashEnds}}<p class="flash-bar" data-flash-ends="{{.Format "2006-01-02T15:04:05Z07:00"}}">⚡ <b>{{$p.T "flashSale"}}</b> · <span data-flash-left data-tpl="{{$p.T "flashEndsIn"}}"></span></p>{{end}}
+      {{with $x.Low30}}<p class="ph-low30 muted small">{{$p.T "phLow30" "a" (money2 .)}}</p>{{end}}
+      <ul class="trust-row">
+        <li>{{glyph "truck"}}{{.T "delivery"}}: <b{{if .Ship.Free}} class="free"{{end}}>{{if .Ship.Free}}{{.T "deliveryVal"}}{{else}}{{money .Ship.Fee}}{{end}}</b>{{if .Ship.FreeOver}} <small class="muted">· {{.T "shipFreeOver" "a" (money .Ship.FreeOver)}}</small>{{end}}</li>
+        <li>{{glyph "shield"}}{{if gt $x.ReturnDays 0}}{{.T "returns" "n" $x.ReturnDays}}{{else}}{{.T "noReturns"}}{{end}}</li>
+      </ul>
+
+      <ul class="pills">
+        <li class="pill{{if ne $x.Condition "new"}} warn{{end}}">{{.T $x.Condition}}</li>
+        {{if and (ne $x.WarrantyType "none") (gt $x.WarrantyMonths 0)}}<li class="pill">{{if eq $x.WarrantyType "official"}}{{.T "warranty_official" "n" $x.WarrantyMonths}}{{else}}{{.T "warranty_store" "n" $x.WarrantyMonths}}{{end}}</li>{{end}}
+      </ul>
+
+      {{if $x.Options}}
+      <div class="box options" id="options">
+        {{range $oi, $o := $x.Options}}
+        <fieldset class="opt" data-opt="{{$oi}}">
+          <legend>{{$o.Name}}: <b class="opt-val" data-for="{{$oi}}"></b></legend>
+          <div class="vals">
+            {{range $vi, $v := $o.Values}}
+            <button type="button" class="val{{if $v.Swatch}} sw{{end}}" data-opt="{{$oi}}" data-val="{{$vi}}" aria-pressed="false" title="{{$v.Value}}">{{if $v.Swatch}}<span style="background:{{$v.Swatch}}"></span><i class="sr">{{$v.Value}}</i>{{else}}{{$v.Value}}{{end}}</button>
+            {{end}}
+          </div>
+        </fieldset>
+        {{end}}
+        <p class="stock" id="stock"></p>
+      </div>
+      {{else}}
+      <p class="stock" id="stock">{{if le $x.Stock 0}}{{.T "soldOut"}}{{else if le $x.Stock 5}}{{.T "left" "n" $x.Stock}}{{else}}{{.T "inStock"}}{{end}}</p>
+      {{end}}
+
+      <div class="actions">
+        <button type="button" class="btn ghost" data-add {{if le $x.Stock 0}}disabled{{end}}>{{glyph "cart"}}{{.T "addToCart"}}</button>
+        <button type="button" class="btn" data-buy {{if le $x.Stock 0}}disabled{{end}}>{{if le $x.Stock 0}}{{.T "soldOut"}}{{else}}{{.T "buyNow"}}{{end}}</button>
+      </div>
+
+      <a class="btn ghost sm chat-link" href="{{.U "/chat"}}?store={{$x.Store.ID}}&amp;product={{$x.ID}}" rel="nofollow">{{.T "chatSeller"}}</a>{{/* chat */}}
+      <button type="button" class="report-link" data-report="product" data-id="{{$x.ID}}"></button>{{/* reports */}}
+      <div class="box delivery">
+        {{glyph "truck"}}
+        <div><strong>{{.T "delivery"}}: <span{{if .Ship.Free}} class="free"{{end}}>{{if .Ship.Free}}{{.T "deliveryVal"}}{{else}}{{money .Ship.Fee}}{{end}}</span></strong><p>{{if .Ship.Free}}{{.T "deliveryNote"}}{{else}}{{.T "deliveryNotePaid"}}{{if .Ship.FreeOver}} {{.T "shipFreeOverStore" "a" (money .Ship.FreeOver)}}{{end}}{{end}}</p></div>
+      </div>
+
+      {{if ne $x.Condition "new"}}
+      <div class="box">
+        <h2>{{.T "conditionTitle"}}: {{.T $x.Condition}}</h2>
+        {{with $x.UsageMonths}}<p class="muted">{{$p.T "usedFor" "n" .}}</p>{{end}}
+        {{if $x.ConditionNote}}<p>{{$x.ConditionNote}}</p>{{end}}
+        {{if has $x.Media "defect_photo"}}
+        <p class="muted small">{{.T "conditionPhotos"}}</p>
+        <div class="defects">{{range $x.Media}}{{if eq .Kind "defect_photo"}}<a href="{{.URL}}" target="_blank" rel="noopener"><img src="{{.URL}}" alt="{{$p.T "conditionPhotos"}}" loading="lazy"></a>{{end}}{{end}}</div>
+        {{end}}
+      </div>
+      {{end}}
+
+      {{if $x.Description}}
+      <div class="box desc">
+        <h2>{{.T "description"}}</h2>
+        <div class="text" id="desc-tr" lang="{{$x.Lang}}">{{$x.Description}}</div>
+        {{if $x.Translated}}
+        <div class="text" id="desc-orig" lang="{{$x.SourceLang}}" hidden><strong>{{$x.OriginalName}}</strong>
+{{$x.OriginalDescription}}</div>
+        <p class="tr-note">{{.T "translatedFrom" "lang" (langname $x.SourceLang)}} <button type="button" class="link" id="toggle-orig" data-a="{{.T "showOriginal"}}" data-b="{{.T "showTranslation"}}">{{.T "showOriginal"}}</button></p>
+        {{end}}
+      </div>
+      {{end}}
+
+      {{with .Data.FAQ}}{{/* askbot */}}
+      <div class="box faq" id="faq">
+        <h2>{{$p.T "faqTitle"}}</h2>
+        {{range .}}<details lang="{{.Lang}}"><summary>{{.Q}}</summary><p>{{.A}}</p></details>{{end}}
+        <p class="muted small">{{$p.T "faqBy"}}</p>
+      </div>
+      {{end}}
+
+      <a class="box store-card" href="{{.U "/s/"}}{{$x.Store.Slug}}">
+        <span class="mini-logo big">{{if $x.Store.LogoURL}}<img src="{{$x.Store.LogoURL}}" alt="">{{else}}{{glyph "store"}}{{end}}</span>
+        <span><strong>{{$x.Store.Name}}</strong><small class="muted">{{.T "products" "n" $x.Store.Products}} · {{.T "since" "d" (month $x.Store.Since)}}</small></span>
+        <span class="go">{{.T "visitStore"}} ›</span>
+      </a>
+    </section>
+  </div>
+
+  {{with .Data.Related}}
+  <section class="block" aria-labelledby="h-rel">
+    {{template "head" (hd "ID" "h-rel" "Title" ($p.T "related"))}}
+    {{template "grid" (pg $p .)}}
+  </section>
+  {{end}}
+</div>
+<div class="buybar">
+  <button type="button" class="bb-add" data-add {{if le $x.Stock 0}}disabled{{end}}>{{glyph "cart"}}<span>{{.T "addToCart"}}</span></button>
+  <button type="button" class="bb-buy" data-buy {{if le $x.Stock 0}}disabled{{end}}>{{if le $x.Stock 0}}<span>{{.T "soldOut"}}</span>{{else}}<span>{{.T "buyShort"}}</span><strong><b id="bb-price">${{money2 $x.MinPrice}}</b><small id="bb-riel">{{rielOnly . $x.MinPrice}}</small></strong>{{end}}</button>
+</div>
+<script type="application/json" id="variants">{{js $x.VariantsJSON}}</script>
+{{template "bottom" .}}{{end}}

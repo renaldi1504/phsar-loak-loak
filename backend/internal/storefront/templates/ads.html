@@ -1,0 +1,21 @@
+{{/* ads: kartu produk bersponsor (tautan lewat /ad/{id} untuk menghitung klik) */}}
+{{define "sponsored"}}{{$p := .P}}{{if .Cards}}
+<div class="grid ad-grid" aria-label="{{$p.T "sponsored"}}">
+{{range .Cards}}
+<article class="card ad-card">
+  <a class="card-img" href="{{.AdURL}}" rel="sponsored nofollow" tabindex="-1" aria-hidden="true">
+    {{if .CoverURL}}<img src="{{.CoverURL}}" alt="" loading="lazy" decoding="async">{{else}}<div class="noimg"></div>{{end}}
+    {{if .HasVideo}}<span class="dur">{{glyph "play" "mono"}}{{if .Duration}}{{durs .Duration}}{{end}}</span>{{end}}
+    <span class="badge ad">{{$p.T "sponsored"}}</span>
+  </a>
+  <div class="card-body">
+    <h3><a href="{{.AdURL}}" rel="sponsored nofollow">{{.Name}}</a></h3>
+    <a class="card-store" href="{{$p.U "/s/"}}{{.StoreSlug}}"><span class="store-ico">{{glyph "store"}}</span><span>{{.StoreName}}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+    <div class="card-foot">
+      <p class="card-price"><b>{{if ne .MinPrice .MaxPrice}}<small>{{$p.T "from"}}</small> {{end}}${{money2 .MinPrice}}</b>{{if .Compare}} <s>${{money .Compare}}</s>{{end}}<span class="riel">{{rielOnly $p .MinPrice}}</span></p>
+      <a class="card-cart" href="{{.AdURL}}" rel="sponsored nofollow" aria-label="{{$p.T "viewProduct"}}: {{.Name}}">{{glyph "cart"}}</a>
+    </div>
+  </div>
+</article>
+{{end}}
+</div>{{end}}{{end}}

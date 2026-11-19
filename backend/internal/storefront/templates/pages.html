@@ -1,0 +1,359 @@
+{{define "home"}}{{template "top" .}}{{$p := .}}
+<section class="banner" aria-label="Phsar">
+  <div class="banner-track" id="bannerTrack" tabindex="0">
+    <div class="slide slide-brand">
+      <div class="wrap slide-in">
+        <div class="slide-copy">
+          <h1>{{.T "bannerLine1"}}<br><span class="nobr">{{.T "bannerLine2"}}</span><i class="swoosh" aria-hidden="true"></i></h1>
+          <p class="wds">Watch • Discover • Shop</p>
+          <form class="search banner-search" action="{{.U "/search"}}" method="get" role="search">
+            <button class="search-go" type="submit" aria-label="{{.T "search"}}">{{glyph "search"}}</button>
+            <input type="search" name="q" placeholder="{{.T "searchPh"}}" aria-label="{{.T "search"}}" enterkeyhint="search" maxlength="80">
+            <button class="photo-btn" type="button" data-photo aria-label="{{.T "photoSearch"}}">{{glyph "camera"}}<span>{{.T "photoBtn"}}</span></button>
+          </form>
+        </div>
+        <img class="portrait" src="/assets/hero-portrait.jpg?v={{.Version}}" alt="" width="324" height="252">
+      </div>
+    </div>
+    {{range .Data.Banners}}
+    <div class="slide slide-promo">
+      {{if .Link}}<a class="promo" href="{{.Link}}"{{if .External}} rel="noopener" target="_blank"{{end}}>{{else}}<div class="promo">{{end}}
+        <img src="{{.Image}}" alt="{{.Title}}" loading="lazy" decoding="async">
+        {{if or .Title .Sub}}<span class="promo-copy">{{if .Title}}<strong>{{.Title}}</strong>{{end}}{{if .Sub}}<span>{{.Sub}}</span>{{end}}</span>{{end}}
+      {{if .Link}}</a>{{else}}</div>{{end}}
+    </div>
+    {{end}}
+    {{range take .Data.Videos 3}}
+    <div class="slide slide-product">
+      <div class="wrap slide-in">
+        <div class="slide-copy">
+          <a class="slide-store" href="{{$p.U "/s/"}}{{.StoreSlug}}"><span class="store-ico">{{glyph "store"}}</span>{{.StoreName}}<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+          <h2>{{.Name}}</h2>
+          <p class="card-price"><b>${{money2 .MinPrice}}</b><span class="riel">{{rielOnly $p .MinPrice}}</span></p>
+          <a class="pill-btn" href="{{$p.U "/p/"}}{{.Slug}}">{{$p.T "viewProduct"}}<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+        </div>
+        <a class="slide-img" href="{{$p.U "/p/"}}{{.Slug}}" tabindex="-1" aria-hidden="true">{{if .CoverURL}}<img src="{{.CoverURL}}" alt="" loading="lazy">{{end}}</a>
+      </div>
+    </div>
+    {{end}}
+  </div>
+  <div class="dots" id="bannerDots" aria-hidden="true"></div>
+  <ul class="wrap benefits">
+    <li><span class="b-ico">{{glyph "shield"}}</span><span>{{if .Ship.Free}}{{.T "trust1"}}{{else}}{{.T "trust1Paid"}}{{end}}</span></li>
+    <li><span class="b-ico">{{glyph "truck"}}</span><span>{{.T "trust2"}}</span></li>
+    <li><span class="b-ico">{{glyph "box"}}</span><span>{{.T "trust3"}}</span></li>
+  </ul>
+</section>
+
+{{if .Seasons}}
+<section class="wrap block season-block" aria-labelledby="h-season">
+  <h2 class="mini-head" id="h-season">{{glyph "flame"}}{{.T "seasonTitle"}}</h2>
+  <div class="seasons">{{range .Seasons}}<a class="season season-{{.Color}}" href="{{.URL}}"><span class="season-tag">{{.Tag}}</span><b>{{.Title}}</b></a>{{end}}</div>
+</section>
+{{end}}
+{{with .Data.Tiles}}
+<section class="wrap block tiles-block" aria-labelledby="h-cats">
+  <div class="head"><div><h2 id="h-cats">{{$p.T "categories"}}</h2></div></div>
+  <div class="tiles" style="--tile-cols:{{tileCols (len .) 12}};--tile-cols-md:{{tileCols (len .) 6}}">
+    {{range .}}<a class="tile" href="{{$p.U "/c/"}}{{.Slug}}">
+      <span class="tile-img">{{if .Cover}}<img src="{{.Cover}}" alt="" loading="lazy" decoding="async">{{else}}<span class="tile-ico">{{catGlyph .Icon}}</span>{{end}}</span>
+      <span class="tile-name">{{.Name}}</span>
+    </a>{{end}}
+  </div>
+</section>
+{{end}}
+
+{{with .Data.Flash}}
+<section class="wrap block flash-block" aria-labelledby="h-flash">
+  <div class="head flash-head">
+    <div><h2 id="h-flash">⚡ {{$p.T "flashSale"}}</h2>
+      <p data-flash-ends="{{if .Live}}{{.EndsAt.Format "2006-01-02T15:04:05Z07:00"}}{{else}}{{.StartsAt.Format "2006-01-02T15:04:05Z07:00"}}{{end}}"><b>{{.Name}}</b> · <span class="flash-clock" data-flash-left data-tpl="{{if .Live}}{{$p.T "flashEndsIn"}}{{else}}{{$p.T "flashStartsIn"}}{{end}}"></span></p></div>
+    <a class="see-all" href="{{$p.U "/flash-sale"}}">{{$p.T "flashSeeAll"}} ›</a>
+  </div>
+  <div class="rail frail">{{range .Cards}}{{template "fcard" (fc $p .)}}{{end}}</div>
+</section>
+{{end}}
+
+{{range .Data.Collections}}
+<section class="wrap block" aria-labelledby="{{.ID}}">
+  {{template "head" (hd "ID" .ID "Title" .Title "More" .More "MoreText" ($p.T "seeAll"))}}
+  {{template "grid" (pg $p .Cards)}}
+</section>
+{{end}}
+
+{{with .Data.Videos}}
+<section class="block" id="videos" aria-labelledby="h-vid">
+  <div class="wrap">{{template "head" (hd "ID" "h-vid" "Title" ($p.T "featuredTitle") "Sub" ($p.T "featuredSub") "Rail" "vrail" "Prev" ($p.T "prev") "Next" ($p.T "next"))}}</div>
+  <div class="wrap"><div class="rail vrail" id="vrail">{{range .}}{{template "vcard" (pc $p .)}}{{end}}</div></div>
+  <p class="wrap rail-note"><span>{{glyph "video"}}{{$p.T "videosSub"}}</span></p>
+</section>
+{{end}}
+
+<section class="wrap block" aria-labelledby="h-new">
+  {{template "head" (hd "ID" "h-new" "Title" (.T "newTitle") "Sub" (.T "newSub"))}}
+  {{if .Data.Newest}}{{template "grid" (pg $p .Data.Newest)}}{{else}}<p class="empty">{{.T "empty"}}</p>{{end}}
+  {{with .Data.NewestMore}}<p class="more"><a class="btn ghost" href="{{.}}" rel="next" data-more>{{$p.T "loadMore"}}</a></p>{{end}}
+</section>
+{{template "bottom" .}}{{end}}
+
+{{define "list"}}{{template "top" .}}{{$p := .}}{{$d := .Data}}
+<section class="wrap block list-head">
+  {{if eq .Active "search"}}
+  <form class="search big-search" action="{{.U "/search"}}" method="get" role="search">
+    <button class="search-go" type="submit" aria-label="{{.T "search"}}">{{glyph "search"}}</button>
+    <input type="search" name="q" value="{{.Query}}" placeholder="{{.T "searchPh"}}" aria-label="{{.T "search"}}" enterkeyhint="search" maxlength="80" {{if not .Query}}autofocus{{end}}>
+    <button class="photo-btn" type="button" data-photo aria-label="{{.T "photoSearch"}}">{{glyph "camera"}}<span>{{.T "photoBtn"}}</span></button>
+  </form>
+  {{else}}
+  <nav class="crumbs" aria-label="breadcrumb"><a href="{{.U "/"}}">{{.T "home"}}</a> ›{{if $d.InSub}} <a href="{{.U "/c/"}}{{$d.Parent.Slug}}">{{$d.Parent.Name}}</a> ›{{end}} <span>{{$d.Heading}}</span></nav>
+  {{end}}
+  <div class="head">
+    <div><h1>{{$d.Heading}}</h1>{{if $d.Sub}}<p>{{$d.Sub}}</p>{{end}}</div>
+    {{if $d.ShowSort}}
+    <form class="sort" method="get">
+      <label>{{.T "sort"}}
+        <select name="sort" data-autosubmit>
+          <option value="new" {{if eq $d.Sort "new"}}selected{{end}}>{{.T "sortNew"}}</option>
+          <option value="price_asc" {{if eq $d.Sort "price_asc"}}selected{{end}}>{{.T "sortPriceAsc"}}</option>
+          <option value="price_desc" {{if eq $d.Sort "price_desc"}}selected{{end}}>{{.T "sortPriceDesc"}}</option>
+          <option value="popular" {{if eq $d.Sort "popular"}}selected{{end}}>{{.T "sortPopular"}}</option>
+        </select>
+      </label>
+      <noscript><button type="submit">OK</button></noscript>
+    </form>
+    {{end}}
+  </div>
+  {{with $d.Category}}
+  {{if $d.Subs}}<div class="chips subchips" aria-label="{{$d.Parent.Name}}">
+    <a class="chip{{if not $d.InSub}} on{{end}}" href="{{$p.U "/c/"}}{{$d.Parent.Slug}}" {{if not $d.InSub}}aria-current="page"{{end}}>{{$p.T "all"}}</a>
+    {{range $d.Subs}}<a class="chip{{if eq .ID $d.Category.ID}} on{{end}}" href="{{$p.U "/c/"}}{{.Slug}}" {{if eq .ID $d.Category.ID}}aria-current="page"{{end}}>{{.Name}}{{if .Count}} <small>{{.Count}}</small>{{end}}</a>{{end}}
+  </div>{{end}}
+  <div class="seg" role="tablist">
+    <span class="seg-on" role="tab" aria-selected="true">{{glyph "grid"}}{{$p.T "productsTab"}}</span>
+    <a role="tab" aria-selected="false" href="{{$p.U "/c/"}}{{.Slug}}/watch">{{glyph "play" "mono"}}{{$p.T "watchTab"}}</a>
+  </div>
+  {{else}}
+  <div class="chips">
+    <a class="chip on" href="{{.U "/"}}">{{glyph "bag"}}{{.T "all"}}</a>
+    {{range .Categories}}<a class="chip" href="{{$p.U "/c/"}}{{.Slug}}">{{catGlyph .Icon}}{{.Name}}</a>{{end}}
+  </div>
+  {{end}}
+</section>
+<section class="wrap block">
+  {{template "sponsored" (adg $p $d.Sponsored)}}
+  {{if $d.Cards}}{{template "grid" (pg $p $d.Cards)}}
+  {{if $d.NextPage}}<p class="more"><a class="btn ghost" href="{{$d.NextPage}}" rel="next" data-more>{{.T "loadMore"}}</a></p>{{end}}
+  {{else if or $d.Query (ne .Active "search")}}<p class="empty">{{$d.Empty}}</p>{{end}}
+</section>
+{{template "bottom" .}}{{end}}
+
+{{define "store"}}{{template "top" .}}{{$p := .}}{{$s := .Data.S}}
+<section class="store-hero">
+  <div class="store-banner"{{if $s.BannerURL}} style="background-image:url('{{$s.BannerURL}}')"{{end}}></div>
+  <div class="wrap store-in">
+    <div class="store-logo">{{if $s.LogoURL}}<img src="{{$s.LogoURL}}" alt="">{{else}}<span>{{initial $s.Name}}</span>{{end}}</div>
+    <div>
+      <h1>{{$s.Name}}</h1>
+      <p class="muted">{{.T "products" "n" $s.Products}} · {{.T "since" "d" (month $s.Since)}}</p>
+      <a class="btn ghost sm chat-link" href="{{.U "/chat"}}?store={{$s.ID}}" rel="nofollow">{{.T "chatSeller"}}</a>{{/* chat */}}
+      <button type="button" class="report-link" data-report="store" data-id="{{$s.ID}}"></button>{{/* reports */}}
+    </div>
+  </div>
+  {{if $s.About}}<div class="wrap"><p class="about">{{$s.About}}</p></div>{{end}}
+</section>
+<section class="wrap block">
+  {{template "head" (hd "ID" "h-all" "Title" (.T "allProducts"))}}
+  {{if .Data.Cards}}{{template "grid" (pg $p .Data.Cards)}}{{else}}<p class="empty">{{.T "empty"}}</p>{{end}}
+  {{with .Data.NextPage}}<p class="more"><a class="btn ghost" href="{{.}}" rel="next" data-more>{{$p.T "loadMore"}}</a></p>{{end}}
+</section>
+{{template "bottom" .}}{{end}}
+
+{{/* Potongan infinite scroll (?fragment=1): kartu berikutnya + link halaman sesudahnya. */}}
+{{define "more"}}{{$p := .}}{{range .Data.Cards}}{{template "card" (pc $p .)}}{{end}}{{with .Data.NextPage}}<a data-next href="{{.}}" hidden></a>{{end}}{{end}}
+
+{{define "shop"}}{{template "top" .}}{{$d := .Data}}
+{{if eq $d.Mode "checkout"}}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">{{end}}
+<div class="wrap shop" id="shop" data-mode="{{$d.Mode}}" data-no="{{$d.OrderNo}}" data-tg="{{$d.TelegramLogin}}" data-test="{{$d.Test}}" data-sms="{{$d.SMS}}" data-fb="{{$d.FB}}" data-closed="{{$d.Closed}}">
+  <div class="loading" aria-busy="true"><span class="spin"></span></div>
+  <noscript><p class="empty">JavaScript is required to order.</p></noscript>
+</div>
+<script>window.PHSAR_SHOP={{.ShopJS}};</script>
+{{if eq $d.Mode "checkout"}}<script>window.P=window.P||{lang:{{.Lang}}};</script>
+<script src="/ui/config.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script src="/ui/maps.js?v={{.Version}}"></script>{{end}}
+<script src="/ui/qrcode.js?v={{.Version}}" defer></script>
+{{if eq $d.Mode "support"}}<script src="/assets/support.js?v={{.Version}}" defer></script>{{end}}
+{{if eq $d.Mode "chat"}}<link rel="stylesheet" href="/assets/chat.css?v={{.Version}}"><script src="/assets/chat.js?v={{.Version}}" defer></script>{{end}}{{/* chat */}}
+<script src="/assets/shop.js?v={{.Version}}" defer></script>
+<script src="/assets/notify.js?v={{.Version}}" defer></script>{{/* notifikasi pembeli: realtime + bunyi + push */}}
+{{template "bottom" .}}{{end}}
+
+{{define "errorpage"}}{{template "top" .}}{{$p := .}}{{$e := .Data}}
+<section class="wrap err-page" aria-labelledby="errTitle">
+  <div class="big-ico">{{glyph $e.Icon}}</div>
+  <p class="err-code">{{.T "errCode" "c" $e.Code}}</p>
+  <h1 id="errTitle">{{$e.Title}}</h1>
+  <p class="muted err-text">{{$e.Text}}</p>
+  {{if $e.Search}}
+  <form class="search big-search err-search" action="{{.U "/search"}}" method="get" role="search">
+    <button class="search-go" type="submit" aria-label="{{.T "search"}}">{{glyph "search"}}</button>
+    <input type="search" name="q" placeholder="{{.T "errSearchPh"}}" aria-label="{{.T "search"}}" enterkeyhint="search" maxlength="80">
+    <button class="photo-btn" type="button" data-photo aria-label="{{.T "photoSearch"}}">{{glyph "camera"}}<span>{{.T "photoBtn"}}</span></button>
+  </form>
+  {{end}}
+  <div class="err-actions">
+    {{if $e.Retry}}<button type="button" class="btn" onclick="location.reload()">{{.T "tryAgain"}}</button>{{end}}
+    <a class="btn{{if $e.Retry}} ghost{{end}}" href="{{.U "/"}}">{{.T "goHome"}}</a>
+    <button type="button" class="btn ghost" data-err-back hidden>{{.T "goBack"}}</button>
+  </div>
+  {{if and $e.Cat .Categories}}
+  <div class="err-browse">
+    <p>{{.T "errBrowse"}}</p>
+    <div class="chips">{{range .Categories}}<a class="chip" href="{{$p.U "/c/"}}{{.Slug}}">{{catGlyph .Icon}}{{.Name}}</a>{{end}}</div>
+  </div>
+  {{end}}
+  <p class="err-help"><a href="{{.U "/contact"}}">{{.T "errHelp"}}</a></p>
+</section>
+<script>(function(){var b=document.querySelector("[data-err-back]");var r=document.referrer;if(b&&r&&history.length>1&&new URL(r).host===location.host){b.hidden=false;b.onclick=function(){history.back()}}})();</script>
+{{template "bottom" .}}{{end}}
+
+{{/* Versi mandiri tanpa database (5xx): CSS inline, tanpa header/footer yang butuh data. */}}
+{{define "errorstatic"}}{{$e := .Data}}<!doctype html>
+<html lang="{{.HTMLLang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>{{.Title}}</title>
+<link rel="icon" href="/assets/icon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,700;9..40,800&family=Noto+Sans+Khmer:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap">
+<style>
+:root{--pink:#f50750;--pink-d:#d60044;--pink-50:#fff0f5;--navy:#102241;--muted:#7c8291}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;font-family:"DM Sans","Noto Sans Khmer","Noto Sans SC",system-ui,-apple-system,"Segoe UI",sans-serif;color:var(--navy);background:radial-gradient(ellipse at 70% 20%,#ffe4ee 0%,#fff6fa 45%,#fff 80%);line-height:1.5}
+header{padding:18px max(20px,env(safe-area-inset-left))}
+.brand{display:inline-flex;align-items:center;gap:8px;color:var(--navy);text-decoration:none;font-weight:800;font-size:24px;letter-spacing:-.5px}
+.brand img{width:32px;height:32px}
+main{flex:1;display:flex;align-items:center;justify-content:center;padding:24px max(20px,env(safe-area-inset-left)) 64px}
+.box{text-align:center;max-width:460px}
+.ico{width:76px;height:76px;margin:0 auto 18px;border-radius:26px;background:var(--pink-50);color:var(--pink);display:grid;place-items:center;font-size:30px;font-weight:800}
+.code{margin:0 0 4px;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--pink)}
+h1{margin:0 0 8px;font-size:26px;line-height:1.3;text-wrap:balance}
+p{margin:0;color:var(--muted)}
+.acts{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:24px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:12px 24px;border-radius:999px;border:0;background:var(--pink);color:#fff;font:inherit;font-weight:700;font-size:16px;text-decoration:none;cursor:pointer}
+.btn:hover{background:var(--pink-d)}
+.btn.ghost{background:#fff;color:var(--pink);border:1px solid #ffd1df}
+.btn:focus-visible{outline:3px solid #f5075055;outline-offset:2px}
+</style>
+</head>
+<body>
+<header><a class="brand" href="/{{.Lang}}/"><img src="/assets/icon.svg" alt="">Phsar</a></header>
+<main>
+  <div class="box">
+    <div class="ico" aria-hidden="true">!</div>
+    <p class="code">{{.T "errCode" "c" $e.Code}}</p>
+    <h1>{{$e.Title}}</h1>
+    <p>{{$e.Text}}</p>
+    <div class="acts">
+      {{if $e.Retry}}<button type="button" class="btn" onclick="location.reload()">{{.T "tryAgain"}}</button>{{end}}
+      <a class="btn{{if $e.Retry}} ghost{{end}}" href="/{{.Lang}}/">{{.T "goHome"}}</a>
+    </div>
+  </div>
+</main>
+</body>
+</html>{{end}}
+
+{{define "legal"}}{{template "top" .}}{{$p := .}}{{$d := .Data}}
+<div class="wrap legal-wrap">
+  <nav class="legal-nav" aria-label="{{.T "legalNav"}}">{{range $d.Links}}<a href="{{$p.U "/"}}{{.Slug}}"{{if .Active}} aria-current="page"{{end}}>{{.Title}}</a>{{end}}</nav>
+  <article class="panel legal-doc">
+  {{if $d.Contact}}
+    <h1>{{.T "contact"}}</h1><p class="muted">{{.T "contactSub"}}</p>
+    <dl class="contact-list">
+      <dt>{{.T "company"}}</dt><dd>{{$d.S.Company}}</dd>
+      {{if $d.S.Address}}<dt>{{.T "address"}}</dt><dd>{{$d.S.Address}}</dd>{{end}}
+      {{if $d.S.Telegram}}<dt>Telegram</dt><dd><a href="https://t.me/{{trimAt $d.S.Telegram}}" rel="noopener">{{$d.S.Telegram}}</a></dd>{{end}}
+      {{if $d.S.Phone}}<dt>{{.T "phoneLabel"}}</dt><dd><a href="tel:{{$d.S.Phone}}">{{$d.S.Phone}}</a></dd>{{end}}
+      {{if $d.S.Email}}<dt>Email</dt><dd><a href="mailto:{{$d.S.Email}}">{{$d.S.Email}}</a></dd>{{end}}
+      {{if $d.S.Facebook}}<dt>Facebook</dt><dd><a href="{{$d.S.Facebook}}" rel="noopener">{{$d.S.Facebook}}</a></dd>{{end}}
+      {{if $d.S.Hours}}<dt>{{.T "hours"}}</dt><dd>{{$d.S.Hours}}</dd>{{end}}
+    </dl>
+    <p class="muted small">{{.T "contactSeller"}}</p>
+    <p><a class="btn" href="{{$p.U "/support"}}">{{.T "supportOpen"}}</a></p>
+  {{else}}
+    <h1>{{$d.Title}}</h1>
+    <p class="muted small">{{.T "legalVersion" "v" $d.Version "d" ($d.Effective.Format "2006-01-02")}}</p>
+    {{if $d.FromLang}}<p class="notice">{{.T "legalOnlyEn"}}</p>{{end}}
+    <div class="legal-body">{{$d.Doc}}</div>
+  {{end}}
+  </article>
+</div>
+{{template "bottom" .}}{{end}}
+
+{{define "fcard"}}{{$p := .P}}{{with .F}}
+<article class="card fcard{{if .SoldOut}} fsold{{end}}">
+  <a class="card-img" href="{{$p.U "/p/"}}{{.Slug}}" tabindex="-1" aria-hidden="true">
+    {{if .CoverURL}}<img src="{{.CoverURL}}" alt="" loading="lazy" decoding="async">{{else}}<div class="noimg"></div>{{end}}
+    {{if .SoldOut}}<span class="badge sold">{{$p.T "flashSoldOut"}}</span>{{else if .Off}}<span class="badge off">-{{.Off}}%</span>{{end}}
+  </a>
+  <div class="card-body">
+    <h3><a href="{{$p.U "/p/"}}{{.Slug}}">{{.Name}}</a></h3>
+    <p class="card-price"><b>${{money2 .Price}}</b> <s class="muted">${{money2 .Normal}}</s></p>
+    <div class="fbar{{if ge .SoldPct 45}} hi{{end}}" role="img" aria-label="{{$p.T "flashSold" "n" .Sold}}"><span style="width:{{.SoldPct}}%"></span><em>{{if .SoldOut}}{{$p.T "flashSoldOut"}}{{else if ge .SoldPct 80}}{{$p.T "flashAlmost"}}{{else}}{{$p.T "flashSold" "n" .Sold}}{{end}}</em></div>
+  </div>
+</article>{{end}}{{end}}
+
+{{define "flashsale"}}{{template "top" .}}{{$p := .}}{{$d := .Data}}
+<section class="wrap block">
+  <nav class="crumbs" aria-label="breadcrumb"><a href="{{.U "/"}}">{{.T "home"}}</a> › <span>{{.T "flashSale"}}</span></nav>
+  <div class="head"><div><h1>⚡ {{.T "flashSale"}}</h1><p>{{.T "flashMeta"}}</p></div></div>
+  {{if not $d.Sessions}}<p class="empty">{{.T "flashNone"}}</p>{{else}}
+  <nav class="flash-tabs" aria-label="{{.T "flashSale"}}">{{range $d.Sessions}}<a href="?s={{.ID}}"{{if eq .ID $d.Active}} aria-current="page"{{end}}>
+    <b>{{if .Live}}{{$p.T "flashLive"}}{{else}}{{.StartsAt.Format "Jan 2 · 15:04"}}{{end}}</b><span>{{.Name}}</span></a>{{end}}</nav>
+  {{range $d.Sessions}}{{if eq .ID $d.Active}}
+  <p class="flash-when" data-flash-ends="{{if .Live}}{{.EndsAt.Format "2006-01-02T15:04:05Z07:00"}}{{else}}{{.StartsAt.Format "2006-01-02T15:04:05Z07:00"}}{{end}}">⏱ <span class="flash-clock" data-flash-left data-tpl="{{if .Live}}{{$p.T "flashEndsIn"}}{{else}}{{$p.T "flashStartsIn"}}{{end}}"></span></p>
+  <div class="grid">{{range .Cards}}{{template "fcard" (fc $p .)}}{{end}}</div>
+  {{end}}{{end}}{{end}}
+</section>
+{{template "bottom" .}}{{end}}
+
+{{define "season"}}{{template "top" .}}{{$p := .}}{{$d := .Data}}
+<section class="wrap block list-head">
+  <nav class="crumbs" aria-label="breadcrumb"><a href="{{.U "/"}}">{{.T "home"}}</a> › <span>{{$d.Season.Title}}</span></nav>
+  <div class="season-hero season-{{$d.Season.Color}}"><span class="season-tag">{{$d.Season.Tag}}</span><h1>{{$d.Season.Title}}</h1><p>{{.T "products" "n" (len $d.Cards)}}</p></div>
+</section>
+<section class="wrap block">
+  {{if $d.Cards}}{{template "grid" (pg $p $d.Cards)}}{{else}}<p class="empty">{{.T "seasonEmpty"}}</p>{{end}}
+</section>
+{{template "bottom" .}}{{end}}
+
+{{define "watch"}}{{template "top" .}}{{$p := .}}{{$d := .Data}}{{$c := $d.Category}}
+<section class="watch" aria-label="{{.T "watchTitle" "c" $c.Name}}">
+  <div class="watch-top">
+    <a class="watch-back" href="{{$d.Back}}" aria-label="{{.T "back"}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></a>
+    <h1>{{$c.Name}}</h1>
+    {{with $d.Parent}}{{if .Children}}<div class="watch-chips">
+      <a class="{{if eq $c.ID .ID}}on{{end}}" href="{{$p.U "/c/"}}{{.Slug}}/watch"{{if eq $c.ID .ID}} aria-current="page"{{end}}>{{$p.T "all"}}</a>
+      {{range .Children}}<a class="{{if eq .ID $c.ID}}on{{end}}" href="{{$p.U "/c/"}}{{.Slug}}/watch"{{if eq .ID $c.ID}} aria-current="page"{{end}}>{{.Name}}</a>{{end}}
+    </div>{{end}}{{end}}
+  </div>
+  {{if $d.Items}}<div class="watch-feed" id="watchFeed">
+    {{range $i, $it := $d.Items}}<article class="watch-item">
+      <video data-watch src="{{$it.Video}}" {{if $it.PosterURL}}poster="{{$it.PosterURL}}"{{end}} playsinline loop muted preload="{{if eq $i 0}}auto{{else}}none{{end}}"></video>
+      <button type="button" class="watch-sound" data-sound aria-label="{{$p.T "watchMuted"}}">{{glyph "sound" "mono"}}</button>
+      <div class="watch-info">
+        <a class="watch-store" href="{{$p.U "/s/"}}{{$it.StoreSlug}}"><span class="store-ico">{{glyph "store"}}</span>{{$it.StoreName}}</a>
+        <div class="watch-card">
+          {{if $it.CoverURL}}<img src="{{$it.CoverURL}}" alt="" loading="lazy">{{end}}
+          <div><p>{{$it.Name}}</p><b>${{money2 $it.MinPrice}}</b> <span class="riel">{{rielOnly $p $it.MinPrice}}</span></div>
+          <a class="watch-buy" href="{{$p.U "/p/"}}{{$it.Slug}}">{{$p.T "watchBuy"}}</a>
+        </div>
+        {{if eq $i 0}}<p class="watch-hint">{{$p.T "watchHint"}}</p>{{end}}
+      </div>
+    </article>{{end}}
+  </div>{{else}}<p class="watch-empty">{{.T "watchEmpty"}}</p>{{end}}
+</section>
+{{template "bottom" .}}{{end}}

@@ -47,10 +47,19 @@ fi
 step "6. Sintaks JavaScript halaman web"
 if command -v node >/dev/null; then
   JS_OK=1
-  for f in internal/webui/*.js; do
+  for f in internal/webui/*.js internal/storefront/assets/*.js; do
     if ! out=$(node --check "$f" 2>&1); then echo "$out" | sed 's/^/     /'; JS_OK=0; fi
   done
-  if [ $JS_OK = 1 ]; then ok "$(ls internal/webui/*.js | wc -l | tr -d ' ') file JS valid"; else bad "ada file JS dengan error sintaks"; fi
+  # Script halaman dimuat bersama (berbagi ruang nama global): nama ganda (mis. dua `const money`) = halaman mati.
+  for page in internal/webui/seller.html internal/webui/admin.html internal/webui/courier.html; do
+    tmpd=$(mktemp -d); tmp="$tmpd/page.js"
+    for js in $(grep -o 'src="/ui/[a-z-]*\.js"' "$page" | sed 's|src="/ui/||; s|"||' | grep -v '^config.js$'); do
+      cat "internal/webui/$js" >> "$tmp"; echo >> "$tmp"
+    done
+    if ! out=$(node --check "$tmp" 2>&1); then echo "     $(basename "$page"): $(echo "$out" | grep -m1 -E 'Error')"; JS_OK=0; fi
+    rm -rf "$tmpd"
+  done
+  if [ $JS_OK = 1 ]; then ok "$(ls internal/webui/*.js internal/storefront/assets/*.js | wc -l | tr -d ' ') file JS valid (juga digabung per halaman)"; else bad "ada file JS dengan error sintaks / nama ganda"; fi
 else
   warn "Node.js tidak terpasang — lewati (pasang: brew install node)"
 fi

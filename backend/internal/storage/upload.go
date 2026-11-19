@@ -25,10 +25,14 @@ type rule struct {
 var images = map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}
 
 var rules = map[string]rule{
-	"store_logo":   {false, 5 << 20, images, "public/stores", nil},
-	"store_banner": {false, 8 << 20, images, "public/stores", nil},
-	"pickup_photo": {false, 8 << 20, images, "public/pickup", nil},
-	"kyc_document": {true, 10 << 20, map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "application/pdf": "pdf"}, "private/kyc", nil},
+	"store_logo":     {false, 5 << 20, images, "public/stores", nil},
+	"store_banner":   {false, 8 << 20, images, "public/stores", nil},
+	"pickup_photo":   {false, 8 << 20, images, "public/pickup", nil},
+	"delivery_proof": {true, 8 << 20, images, "private/delivery", nil}, // foto serah terima oleh kurir
+	"return_photo":   {true, 8 << 20, images, "private/returns", nil},  // bukti retur dari pembeli
+	"content_image":  {false, 5 << 20, images, "public/content", nil},  // content: banner beranda & gambar OG (admin)
+	"chat_photo":     {true, 8 << 20, images, "private/chat", nil},     // chat: foto dalam chat pembeli ↔ toko
+	"kyc_document":   {true, 10 << 20, map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "application/pdf": "pdf"}, "private/kyc", nil},
 	// Foto 8 MB; video maks. 100 MB (± 3 menit dari HP). Transcode/kompres menyusul.
 	"product_media": {false, MaxVideoBytes, map[string]string{"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp",
 		"video/mp4": "mp4", "video/quicktime": "mov", "video/webm": "webm"}, "public/products",

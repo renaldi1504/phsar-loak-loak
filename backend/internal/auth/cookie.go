@@ -25,7 +25,11 @@ func (s *Service) CookieRoutes(audience, cookieName, cookiePath string) http.Han
 		http.SetCookie(w, &http.Cookie{Name: cookieName, Value: "", Path: cookiePath, MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 	}
 	public := func(p TokenPair) map[string]any {
-		return map[string]any{"access_token": p.AccessToken, "access_expires_at": p.AccessExpiresAt, "user": p.User}
+		out := map[string]any{"access_token": p.AccessToken, "access_expires_at": p.AccessExpiresAt, "user": p.User}
+		if p.MFA != nil {
+			out["mfa"] = p.MFA
+		}
+		return out
 	}
 	// Cegah CSRF: request dari halaman kita selalu mengirim header ini; form dari situs lain tidak bisa.
 	guard := func(next http.HandlerFunc) http.HandlerFunc {
@@ -93,6 +97,24 @@ func (s *Service) CookieRoutes(audience, cookieName, cookiePath string) http.Han
 		set(w, pair)
 		writeJSON(w, http.StatusOK, public(pair))
 	}))
+	if audience == "admin" {
+		r.Mount("/mfa", s.MFARoutes())
+	}
+	// Login Facebook (redirect, bukan fetch — tidak bisa membawa header X-Phsar; dilindungi state acak di cookie).
+	r.Get("/facebook/start", func(w http.ResponseWriter, r *http.Request) { s.facebookStart(w, r, cookiePath) })
+	r.Get("/facebook/callback", func(w http.ResponseWriter, r *http.Request) { s.facebookCallback(w, r, cookiePath, audience, set) })
+	// Checkout sebagai tamu — hanya website pembeli.
+	if cookiePath == "/shop/auth" {
+		r.Post("/guest", guard(func(w http.ResponseWriter, r *http.Request) {
+			pair, err := s.GuestSession(r.Context(), string(i18n.From(r.Context())), client(r, "web"))
+			if err != nil {
+				s.fail(w, err)
+				return
+			}
+			set(w, pair)
+			writeJSON(w, http.StatusOK, public(pair))
+		}))
+	}
 	r.Post("/logout", guard(func(w http.ResponseWriter, r *http.Request) {
 		if c, err := r.Cookie(cookieName); err == nil && c.Value != "" {
 			_ = s.Logout(r.Context(), c.Value)

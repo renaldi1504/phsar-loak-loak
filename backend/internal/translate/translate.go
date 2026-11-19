@@ -1,6 +1,7 @@
 // Package translate menerjemahkan teks seller (produk, toko) ke dua bahasa lainnya.
 //
-// Utama: Claude (Anthropic Messages API). Cadangan: Google Cloud Translation v2.
+// Utama: Claude (Anthropic Messages API). Cadangan: Gemini (gemini.go), lalu Google Cloud Translation v2 (opsional, .env).
+// Kunci AI diatur super admin di Admin → Integrasi (lihat Dynamic); .env hanya cadangan.
 // Seller cukup menulis dalam satu bahasa (km, en, atau zh).
 package translate
 
@@ -26,8 +27,9 @@ type Request struct {
 
 // Result.Texts[lang][field] = terjemahan.
 type Result struct {
-	Texts map[string]map[string]string
-	Model string
+	Texts   map[string]map[string]string
+	Model   string
+	In, Out int // token (untuk laporan pemakaian)
 }
 
 type Translator interface {
@@ -155,13 +157,17 @@ func (c *Claude) Translate(ctx context.Context, req Request) (Result, error) {
 			Input map[string]map[string]string `json:"input"`
 		} `json:"content"`
 		StopReason string `json:"stop_reason"`
+		Usage      struct {
+			InputTokens  int `json:"input_tokens"`
+			OutputTokens int `json:"output_tokens"`
+		} `json:"usage"`
 	}
 	if err := json.Unmarshal(raw, &out); err != nil {
 		return Result{}, fmt.Errorf("claude: respons tidak terbaca: %w", err)
 	}
 	for _, blk := range out.Content {
 		if blk.Type == "tool_use" {
-			res := Result{Texts: map[string]map[string]string{}, Model: out.Model}
+			res := Result{Texts: map[string]map[string]string{}, Model: out.Model, In: out.Usage.InputTokens, Out: out.Usage.OutputTokens}
 			for _, l := range req.Targets {
 				m := blk.Input[l]
 				for k := range req.Fields {

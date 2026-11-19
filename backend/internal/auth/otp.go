@@ -24,6 +24,7 @@ var (
 	ErrOTPTooMany   = errors.New("terlalu banyak permintaan kode, coba lagi nanti")
 	ErrOTPInvalid   = errors.New("kode salah atau sudah kedaluwarsa")
 	ErrOTPExhausted = errors.New("terlalu banyak percobaan, minta kode baru")
+	ErrSMSFailed    = errors.New("SMS tidak bisa dikirim sekarang, coba lagi atau pakai Telegram")
 )
 
 // SMSSender mengirim SMS. Provider sungguhan (lokal Kamboja / Twilio) ditambahkan nanti.
@@ -31,8 +32,35 @@ type SMSSender interface {
 	Send(ctx context.Context, phone, text string) error
 }
 
-// SetSMSSender mengganti pengirim SMS (dipakai test QA untuk menangkap kode OTP; nanti provider sungguhan).
-func (s *Service) SetSMSSender(x SMSSender) { s.sms = x }
+// SetSMSSender mengganti pengirim SMS (dipakai test QA untuk menangkap kode OTP). Mengalahkan UseSMSGateway.
+func (s *Service) SetSMSSender(x SMSSender) { s.sms, s.smsSet = x, true }
+
+// SMSGateway: provider SMS yang diatur super admin (PlasGate / log / mati).
+type SMSGateway interface {
+	SMSSender
+	SMSEnabled(ctx context.Context) bool
+}
+
+// UseSMSGateway memasang provider SMS dari pengaturan admin.
+func (s *Service) UseSMSGateway(g SMSGateway) { s.gw = g }
+
+// SMSEnabled: login dengan kode SMS tersedia saat ini.
+func (s *Service) SMSEnabled(ctx context.Context) bool {
+	switch {
+	case s.smsSet:
+		return true
+	case s.gw != nil:
+		return s.gw.SMSEnabled(ctx)
+	}
+	return s.cfg.SMSProvider != "off"
+}
+
+func (s *Service) smsSender() SMSSender {
+	if s.gw != nil && !s.smsSet {
+		return s.gw
+	}
+	return s.sms
+}
 
 // LogSMSSender: hanya untuk pengembangan — kode OTP ditulis ke log server.
 type LogSMSSender struct{ log *slog.Logger }
@@ -78,8 +106,10 @@ func (s *Service) RequestOTP(ctx context.Context, rawPhone, lang string, c Clien
 	if !ok {
 		tmpl = otpText["en"]
 	}
-	if err := s.sms.Send(ctx, phone, sprintf(tmpl, code)); err != nil {
-		return "", err
+	if err := s.smsSender().Send(ctx, phone, sprintf(tmpl, code)); err != nil {
+		s.log.Error("SMS OTP gagal dikirim", "err", err)
+		_, _ = s.pool.Exec(ctx, `DELETE FROM otp_codes WHERE phone = $1 AND created_at > now() - interval '1 minute' AND purpose = 'login'`, phone)
+		return "", ErrSMSFailed
 	}
 	return phone, nil
 }
@@ -92,6 +122,7 @@ func (s *Service) VerifyOTP(ctx context.Context, rawPhone, code, audience, lang 
 	}
 	var pair TokenPair
 	var failReason string
+	notAdmin := false
 	err = db.WithActor(ctx, s.pool, "", "system", "", func(tx pgx.Tx) error {
 		var id, hash string
 		var attempts int
@@ -124,11 +155,18 @@ func (s *Service) VerifyOTP(ctx context.Context, rawPhone, code, audience, lang 
 		if err != nil {
 			return err
 		}
+		if ok, err := adminAllowed(ctx, tx, userID, audience); err != nil || !ok {
+			notAdmin, failReason = !ok, "not_admin"
+			return err // kode tetap terpakai (commit), tapi tidak ada sesi admin
+		}
 		pair, err = s.issueSession(ctx, tx, userID, audience, created, c)
 		return err
 	})
 	if err == nil && failReason == "otp_wrong" {
 		err = ErrOTPInvalid
+	}
+	if err == nil && notAdmin {
+		err = ErrNotAdmin
 	}
 	s.recordAttempt(ctx, phone, c, err == nil, failReason)
 	return pair, err

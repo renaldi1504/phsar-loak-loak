@@ -14,6 +14,7 @@ import (
 
 	"phsar/internal/config"
 	"phsar/internal/platform/db"
+	"phsar/internal/secretbox"
 )
 
 const (
@@ -32,17 +33,26 @@ var (
 )
 
 type Service struct {
+	box    *secretbox.Box // enkripsi secret MFA (DATA_ENCRYPTION_KEY)
 	pool   *pgxpool.Pool
 	cfg    config.Config
 	log    *slog.Logger
 	secret []byte
 	sms    SMSSender
+	smsSet bool           // SetSMSSender dipanggil (tes) → selalu dipakai
+	gw     SMSGateway     // provider SMS yang diatur admin (paket integ)
+	fb     FacebookConfig // Login Facebook (paket integ)
 	tg     *TelegramClient
 	now    func() time.Time
 }
 
 func NewService(pool *pgxpool.Pool, cfg config.Config, log *slog.Logger) *Service {
 	s := &Service{pool: pool, cfg: cfg, log: log, secret: []byte(cfg.JWTSecret), now: time.Now}
+	if cfg.DataKey != "" {
+		if box, err := secretbox.New(cfg.DataKey); err == nil {
+			s.box = box
+		}
+	}
 	s.sms = LogSMSSender{log: log}
 	if cfg.TelegramBotToken != "" {
 		s.tg = NewTelegramClient(cfg.TelegramBotToken)
@@ -56,6 +66,7 @@ type TokenPair struct {
 	RefreshToken     string    `json:"refresh_token"`
 	RefreshExpiresAt time.Time `json:"refresh_expires_at"`
 	User             UserInfo  `json:"user"`
+	MFA              *MFAState `json:"mfa,omitempty"` // hanya sesi admin
 }
 
 type UserInfo struct {
@@ -65,6 +76,7 @@ type UserInfo struct {
 	Language string `json:"language"`
 	IsNew    bool   `json:"is_new"`
 	HasStore bool   `json:"has_store"` // true = tampilkan tombol mode seller
+	IsGuest  bool   `json:"is_guest"`  // akun tamu (checkout tanpa login)
 }
 
 type ClientInfo struct {
@@ -147,21 +159,36 @@ func (s *Service) issueSession(ctx context.Context, tx pgx.Tx, userID, audience 
 	).Scan(&sid); err != nil {
 		return TokenPair{}, err
 	}
+	// Mode dev: sesi admin langsung dianggap lolos MFA (tercatat di audit). Tidak pernah di staging/production.
+	if audience == "admin" && s.cfg.AdminMFADevSkip && s.cfg.Env == "development" {
+		if err := markVerified(ctx, tx, Claims{Subject: userID, SessionID: sid}, c, "admin.mfa_dev_skip"); err != nil {
+			return TokenPair{}, err
+		}
+	}
 	return s.tokenPair(ctx, tx, userID, audience, sid, refresh, refreshExp, isNew)
 }
 
 func (s *Service) tokenPair(ctx context.Context, q pgx.Tx, userID, audience, sid, refresh string, refreshExp time.Time, isNew bool) (TokenPair, error) {
 	now := s.now()
-	access, err := signJWT(s.secret, Claims{Subject: userID, Audience: audience, SessionID: sid, IssuedAt: now.Unix(), ExpiresAt: now.Add(AccessTTL).Unix()})
-	if err != nil {
-		return TokenPair{}, err
+	var mfa *MFAState
+	if audience == "admin" {
+		st, err := mfaState(ctx, q, userID, sid)
+		if err != nil {
+			return TokenPair{}, err
+		}
+		mfa = &st
 	}
 	u, err := loadUser(ctx, q, userID)
 	if err != nil {
 		return TokenPair{}, err
 	}
+	access, err := signJWT(s.secret, Claims{Subject: userID, Audience: audience, SessionID: sid, IssuedAt: now.Unix(),
+		ExpiresAt: now.Add(AccessTTL).Unix(), MFA: mfa != nil && mfa.Verified, Guest: u.IsGuest})
+	if err != nil {
+		return TokenPair{}, err
+	}
 	u.IsNew = isNew
-	return TokenPair{AccessToken: access, AccessExpiresAt: now.Add(AccessTTL), RefreshToken: refresh, RefreshExpiresAt: refreshExp, User: u}, nil
+	return TokenPair{AccessToken: access, AccessExpiresAt: now.Add(AccessTTL), RefreshToken: refresh, RefreshExpiresAt: refreshExp, User: u, MFA: mfa}, nil
 }
 
 type queryer interface {
@@ -174,8 +201,8 @@ func loadUser(ctx context.Context, q queryer, userID string) (UserInfo, error) {
 	err := q.QueryRow(ctx, `
 		SELECT u.id, u.name, u.phone, u.language::text,
 		       EXISTS (SELECT 1 FROM store_members sm JOIN stores st ON st.id = sm.store_id
-		               WHERE sm.user_id = u.id AND st.deleted_at IS NULL)
-		FROM users u WHERE u.id = $1 AND u.deleted_at IS NULL`, userID).Scan(&u.ID, &u.Name, &phone, &u.Language, &u.HasStore)
+		               WHERE sm.user_id = u.id AND st.deleted_at IS NULL), u.is_guest
+		FROM users u WHERE u.id = $1 AND u.deleted_at IS NULL`, userID).Scan(&u.ID, &u.Name, &phone, &u.Language, &u.HasStore, &u.IsGuest)
 	if phone != nil {
 		u.Phone = *phone
 	}
@@ -185,18 +212,27 @@ func loadUser(ctx context.Context, q queryer, userID string) (UserInfo, error) {
 // Refresh menukar refresh token lama dengan pasangan baru (rotasi). Token lama langsung tidak berlaku.
 func (s *Service) Refresh(ctx context.Context, refresh string, c ClientInfo) (TokenPair, error) {
 	var pair TokenPair
+	revokedIdle := false
 	err := db.WithActor(ctx, s.pool, "", "system", "", func(tx pgx.Tx) error {
 		var sid, userID, audience string
-		var exp time.Time
+		var exp, seen time.Time
 		err := tx.QueryRow(ctx, `
-			SELECT s.id, s.user_id, s.audience, s.expires_at FROM sessions s JOIN users u ON u.id = s.user_id
+			SELECT s.id, s.user_id, s.audience, s.expires_at, s.last_seen_at FROM sessions s JOIN users u ON u.id = s.user_id
 			WHERE s.refresh_token_hash = $1 AND s.revoked_at IS NULL AND u.status = 'active' AND u.deleted_at IS NULL
-			FOR UPDATE OF s`, sha256Hex(refresh)).Scan(&sid, &userID, &audience, &exp)
+			FOR UPDATE OF s`, sha256Hex(refresh)).Scan(&sid, &userID, &audience, &exp, &seen)
 		if errors.Is(err, pgx.ErrNoRows) || (err == nil && !exp.After(s.now())) {
 			return ErrSessionInvalid
 		}
 		if err != nil {
 			return err
+		}
+		if audience == "admin" && s.now().Sub(seen) > AdminIdleTimeout {
+			// Admin lama tidak aktif: sesi ditutup, harus login + MFA lagi.
+			if _, err := tx.Exec(ctx, `UPDATE sessions SET revoked_at = now() WHERE id = $1`, sid); err != nil {
+				return err
+			}
+			revokedIdle = true
+			return nil
 		}
 		next := randomToken(32)
 		if _, err := tx.Exec(ctx, `UPDATE sessions SET refresh_token_hash = $2, last_seen_at = now(), ip = coalesce($3, ip) WHERE id = $1`,
@@ -206,6 +242,9 @@ func (s *Service) Refresh(ctx context.Context, refresh string, c ClientInfo) (To
 		pair, err = s.tokenPair(ctx, tx, userID, audience, sid, next, exp, false)
 		return err
 	})
+	if err == nil && revokedIdle {
+		return TokenPair{}, ErrSessionInvalid
+	}
 	return pair, err
 }
 

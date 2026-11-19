@@ -223,6 +223,10 @@ func (s *Service) PollTelegram(ctx context.Context, requestID, pollToken string,
 		if _, err := tx.Exec(ctx, `UPDATE telegram_login_requests SET status = 'consumed', consumed_at = now() WHERE id = $1`, requestID); err != nil {
 			return err
 		}
+		if ok, err := adminAllowed(ctx, tx, userID, audience); err != nil || !ok {
+			out.Status = "not_admin"
+			return err
+		}
 		pair, err := s.issueSession(ctx, tx, userID, audience, created, c)
 		if err != nil {
 			return err
@@ -231,6 +235,25 @@ func (s *Service) PollTelegram(ctx context.Context, requestID, pollToken string,
 		return nil
 	})
 	return out, err
+}
+
+// RegisterTelegramWebhook dipakai di server (TELEGRAM_MODE=webhook): beri tahu Telegram alamat webhook kita.
+// Dipanggil setiap start — aman diulang. Telegram hanya menerima https.
+func (s *Service) RegisterTelegramWebhook(ctx context.Context) {
+	if s.tg == nil {
+		return
+	}
+	base := s.cfg.PublicBaseURL
+	if !strings.HasPrefix(base, "https://") {
+		s.log.Warn("telegram webhook tidak didaftarkan: PUBLIC_BASE_URL harus https://", "base", base)
+		return
+	}
+	url := base + "/webhooks/telegram/" + s.cfg.TelegramWebhookKey
+	if err := s.tg.call(ctx, "setWebhook", map[string]any{"url": url, "allowed_updates": []string{"message"}}, nil); err != nil {
+		s.log.Error("telegram setWebhook gagal", "err", err)
+		return
+	}
+	s.log.Info("telegram webhook aktif", "bot", "@"+s.cfg.TelegramBotUsername)
 }
 
 // RunTelegramPolling dipakai di laptop (tanpa domain publik): ambil pesan bot lewat getUpdates.

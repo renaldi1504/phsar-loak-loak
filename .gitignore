@@ -28,3 +28,13 @@ __pycache__/
 
 # File upload lokal
 /backend/data/
+
+# Model embedder (diunduh dengan embedder/download-model.sh)
+/embedder/models/
+
+# Backup di server (deploy/phsar.sh)
+/deploy/backups/
+/backend/payway-test-qr.png
+
+# Berkas sementara sinkronisasi (bukan bagian kode)
+/mac.md5

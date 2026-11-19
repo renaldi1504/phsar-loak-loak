@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"phsar/internal/jobs"
 	"phsar/internal/platform/db"
 	"phsar/internal/seller"
 )
@@ -40,15 +41,17 @@ func (w *Worker) Run(ctx context.Context) {
 	t := time.NewTicker(w.Interval)
 	defer t.Stop()
 	for {
-		for {
-			did, err := w.RunOnce(ctx)
-			if err != nil {
-				w.Log.Error("worker terjemahan", "err", err)
-				break
+		// Kunci diatur di Admin → Integrasi: selama belum ada kunci, job menunggu (tidak menghabiskan percobaan).
+		if r, ok := w.T.(interface{ Ready(context.Context) bool }); ok && !r.Ready(ctx) {
+			select {
+			case <-ctx.Done():
+				return
+			case <-t.C:
 			}
-			if !did || ctx.Err() != nil {
-				break
-			}
+			continue
+		}
+		if _, err := jobs.Drain(ctx, w.Pool, "translate.queue", w.RunOnce); err != nil { // jobs: kosongkan antrean
+			w.Log.Error("worker terjemahan", "err", err)
 		}
 		select {
 		case <-ctx.Done():
@@ -67,6 +70,9 @@ type job struct {
 
 // RunOnce mengambil satu entitas dari antrean dan memprosesnya. false = antrean kosong.
 func (w *Worker) RunOnce(ctx context.Context) (bool, error) {
+	if r, ok := w.T.(interface{ Ready(context.Context) bool }); ok && !r.Ready(ctx) {
+		return false, nil // belum ada kunci AI: job tetap menunggu di antrean
+	}
 	rows, err := w.Pool.Query(ctx, `
 		WITH first AS (
 			SELECT entity_table, entity_id FROM translation_jobs

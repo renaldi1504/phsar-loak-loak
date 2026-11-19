@@ -1,0 +1,126 @@
+# HTTPS otomatis (Let's Encrypt). Domain dari PHSAR_DOMAIN di deploy/.env. Satu backend, dibagi per subdomain:
+#
+#   {$PHSAR_DOMAIN}         pembeli: website, keranjang, kurir (/courier), webhooks
+#   seller.{$PHSAR_DOMAIN}  Seller Center   (domain utama /seller… → dialihkan ke sini)
+#   admin.{$PHSAR_DOMAIN}   Admin           (domain utama /admin… → 404, admin tidak terlihat dari website)
+#   api.{$PHSAR_DOMAIN}     API aplikasi (/v1/…) — website tetap memakai /v1 di domain utama (tanpa CORS)
+#
+# DNS: A record untuk @, www, seller, admin, api → IP server (atau satu wildcard *). sslip.io langsung jalan.
+# Login per subdomain terpisah (cookie hanya berlaku di subdomain itu).
+{
+	email {$ACME_EMAIL}
+}
+
+(common) {
+	encode zstd gzip
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(self), geolocation=(self), microphone=()"
+		X-Robots-Tag "{args[0]}"
+		-Server
+	}
+	# Video produk boleh besar; backend sendiri yang membatasi ukuran per jenis file.
+	request_body {
+		max_size 300MB
+	}
+	log {
+		output stdout
+		format console
+	}
+}
+
+(app) {
+	reverse_proxy app:8080 {
+		# Alamat IP pembeli yang asli untuk rate limit & audit log. Header dari luar dibuang supaya tidak bisa dipalsukan.
+		header_up -True-Client-IP
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		transport http {
+			read_timeout 10m
+			write_timeout 10m
+		}
+	}
+}
+
+# Backend mati / sedang restart (502, 503, 504): halaman statis 3 bahasa dari deploy/errors/,
+# bukan layar error bawaan browser. Halaman 404/500 lain dibuat oleh backend sendiri (bahasa pembeli).
+(down) {
+	handle_errors 502 503 504 {
+		root * /srv/errors
+		rewrite * /down.html
+		header Cache-Control "no-store"
+		header Retry-After "30"
+		file_server
+	}
+}
+
+# API: tetap JSON supaya aplikasi bisa membacanya.
+(down_json) {
+	handle_errors 502 503 504 {
+		header Content-Type "application/json"
+		header Retry-After "30"
+		respond `{"error":{"code":"unavailable","message":"Phsar is restarting, try again shortly"}}` {err.status_code}
+	}
+}
+
+www.{$PHSAR_DOMAIN} {
+	redir https://{$PHSAR_DOMAIN}{uri} permanent
+}
+
+# ---- Pembeli ----
+{$PHSAR_DOMAIN} {
+	import common "{$ROBOTS_TAG:all}"
+	@admin path /admin /admin/*
+	respond @admin 404
+	@seller path /seller /seller/*
+	redir @seller https://seller.{$PHSAR_DOMAIN}{uri} 302
+	import app
+	import down
+}
+
+# ---- Seller Center ----
+seller.{$PHSAR_DOMAIN} {
+	import common "noindex, nofollow"
+	redir / /seller/ 302
+	@ok path /seller /seller/* /v1/seller/* /v1/app/* /ui/* /media/* /healthz
+	handle @ok {
+		import app
+	}
+	import down
+	# Halaman toko/produk dll. dibuka di website pembeli.
+	handle {
+		redir https://{$PHSAR_DOMAIN}{uri} 302
+	}
+}
+
+# ---- Admin ----
+admin.{$PHSAR_DOMAIN} {
+	import common "noindex, nofollow"
+	redir / /admin/ 302
+	@ok path /admin /admin/* /v1/app/* /ui/* /media/* /healthz
+	handle @ok {
+		import app
+	}
+	import down
+	handle {
+		redir https://{$PHSAR_DOMAIN}{uri} 302
+	}
+}
+
+# ---- API aplikasi (Flutter) ----
+api.{$PHSAR_DOMAIN} {
+	import common "noindex, nofollow"
+	@ok path /v1/* /media/* /healthz /readyz
+	handle @ok {
+		import app
+	}
+	import down_json
+	handle / {
+		respond "Phsar API" 200
+	}
+	handle {
+		respond 404
+	}
+}

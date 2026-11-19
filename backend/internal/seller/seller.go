@@ -29,7 +29,7 @@ var (
 	ErrNotEditable   = errors.New("toko sedang diperiksa admin, tunggu hasilnya dulu")
 	ErrIncomplete    = errors.New("data toko belum lengkap")
 	ErrSlugTaken     = errors.New("alamat toko (slug) sudah dipakai")
-	ErrTooManyStores = errors.New("satu akun maksimal memiliki 3 toko")
+	ErrTooManyStores = errors.New("satu akun hanya boleh memiliki 1 toko")
 )
 
 type validationError struct{ field, msg string }
@@ -44,6 +44,8 @@ type Service struct {
 	now   func() time.Time
 	// TranslationOn: false = server tidak punya API key terjemahan (job hanya menunggu di antrean).
 	TranslationOn bool
+	// TranslationReady (opsional): kunci AI diatur di admin — dicek tiap kali, menggantikan TranslationOn.
+	TranslationReady func(context.Context) bool
 	// MediaOn: true = ffmpeg tersedia → video dikompres & dibuatkan sampul, foto diperkecil (worker media).
 	MediaOn bool
 }
@@ -60,6 +62,9 @@ type CreateStoreInput struct {
 	About     string `json:"about"`      // ditulis dalam satu bahasa
 	AboutLang string `json:"about_lang"` // en · km · zh; dua bahasa lain diterjemahkan AI
 }
+
+// MaxStoresPerOwner: satu akun hanya boleh memiliki satu toko (mencegah spam toko).
+const MaxStoresPerOwner = 1
 
 var slugRe = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
@@ -112,7 +117,7 @@ func (s *Service) CreateStore(ctx context.Context, userID string, in CreateStore
 			WHERE sm.user_id = $1 AND sm.role = 'owner' AND st.deleted_at IS NULL`, userID).Scan(&owned); err != nil {
 			return err
 		}
-		if owned >= 3 {
+		if owned >= MaxStoresPerOwner { // anti spam toko: 1 akun = 1 toko (staf di toko lain tetap boleh)
 			return ErrTooManyStores
 		}
 		var taken bool
@@ -182,6 +187,7 @@ type Store struct {
 	About       map[string]string `json:"about"`
 	Role        string            `json:"role,omitempty"` // owner · staff (untuk user yang meminta)
 	Checklist   *Checklist        `json:"checklist,omitempty"`
+	Commission  *Commission       `json:"commission,omitempty"` // hanya di GET toko (kalkulator "Anda terima")
 	CreatedAt   time.Time         `json:"created_at"`
 }
 

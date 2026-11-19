@@ -10,7 +10,8 @@ penjemputan toko), komisi 8% rata, bahasa **EN (default) · ខ្មែរ · �
 | `backend/` | Satu binary Go: API app & seller (`/v1/...`), admin (`/admin`), webhook, website customer (SSR, Tahap 2), worker |
 | `backend/migrations/` | Skema PostgreSQL (goose), dari ERD Phsar |
 | `app/` | Satu app Flutter: pembeli + mode seller (+ mode kurir) |
-| `embedder/` | Layanan Python internal: embedding foto & moderasi otomatis (menyusul) |
+| `embedder/` | Layanan Python internal: embedding foto untuk cari-dengan-foto |
+| `deploy/` | Online di server: docker compose (Caddy HTTPS, Postgres, app, worker, embedder, backup) + `phsar.sh` — lihat `deploy/README.md` |
 | `api/openapi.yaml` | Kontrak API → client Dart dibuat dari file ini |
 
 ## Menjalankan di komputer sendiri
@@ -58,7 +59,7 @@ Alur Telegram: app `POST /v1/app/auth/telegram/start` → buka `deep_link` → b
 - **Tim**: owner mengundang staf lewat link (sekali pakai, 7 hari); staf hanya mengelola produk. **Edit stok & harga cepat** dari daftar produk. **Banner toko**.
 - **http://localhost:8080/admin/**: antrean verifikasi toko, buka dokumen KYC, setujui/tolak KYC, titik penjemputan, dan toko.
   Menu **Products**: antrean moderasi produk (setujui · minta perbaikan · tolak), cek otomatis kata terlarang, perbaiki terjemahan.
-  Akun harus dijadikan admin dulu (`phsar admin grant`).
+  Akun harus dijadikan admin dulu (`phsar admin grant`), lalu login 2 langkah (lihat **Login admin + MFA**).
 
 Sesi web memakai cookie HttpOnly (refresh token) + access token di memori halaman.
 
@@ -76,11 +77,22 @@ Semua butuh header `Authorization: Bearer <access_token>` (dari login di atas).
 | Titik penjemputan | `POST/GET /v1/seller/stores/{id}/pickup-points` · `PUT/DELETE …/{pointID}` (pin wajib di Sihanoukville) |
 | Kirim untuk diverifikasi | `POST /v1/seller/stores/{id}/submit` |
 
-Admin (sementara memakai token login biasa; login admin + MFA menyusul):
+### Login admin + MFA
 
-```bash
-make -C backend build && ./backend/bin/phsar admin grant 012345678 moderator   # jadikan admin (user harus sudah pernah login)
-```
+Semua admin login 2 langkah di `/admin`: **nomor HP** (Telegram/SMS) → **kode 6 angka** dari aplikasi authenticator
+(Google Authenticator, Microsoft Authenticator, 1Password…).
+
+1. Orangnya login sekali di `/admin` (muncul "bukan admin", tapi akunnya jadi tercatat).
+2. Jadikan admin: `./backend/bin/phsar admin grant 012345678 super_admin` (atau dari menu **Admins** oleh super_admin).
+3. Login lagi → scan QR → masukkan kode → **simpan 10 kode cadangan** (sekali pakai, untuk kalau HP hilang).
+
+- API admin (`/admin/api/...`) hanya menerima sesi admin yang sudah lolos MFA; token app/Seller Center ditolak.
+- Sesi admin: maksimal 8 jam, ditutup otomatis kalau 30 menit tidak dipakai. 5 kode salah → sesi dicabut; 10 salah dalam 15 menit → dikunci 15 menit.
+- Secret authenticator disimpan terenkripsi dengan `DATA_ENCRYPTION_KEY`; kode yang sama tidak bisa dipakai dua kali.
+- HP admin hilang: super_admin buka **Admins** → **Reset MFA**, atau `./backend/bin/phsar admin reset-mfa 012345678`.
+- Menu **Admins** (super_admin): tambah admin, ganti peran, nonaktifkan, reset MFA, buat kode cadangan baru.
+
+Endpoint admin:
 
 `GET /admin/api/stores` (antrean) · `GET /admin/api/stores/{id}` · `POST …/kyc` · `POST /admin/api/pickup-points/{id}/decision` ·
 `POST …/stores/{id}/decision` — body `{"decision":"approve"}` atau `{"decision":"reject","note":"…"}`.
@@ -88,6 +100,68 @@ Toko aktif kalau KYC terverifikasi + minimal satu titik penjemputan terverifikas
 
 File upload disimpan di `backend/data/uploads` (tidak ikut git). File `public/…` disajikan di `/media/public/…`;
 dokumen KYC (`private/…`) hanya bisa dibuka admin lewat `/admin/api/files/…` dan setiap akses tercatat di audit log.
+
+## Website pembeli
+
+Buka http://localhost:8080/ → otomatis ke /km/, /en/ atau /zh/ (dari cookie, lalu bahasa browser).
+
+| URL | Isi |
+|---|---|
+| `/{lang}/` | beranda: kategori, video, produk baru |
+| `/{lang}/c/{kategori}` | kategori (urut terbaru / harga), 24 per halaman |
+| `/{lang}/search?q=` | pencarian lintas bahasa (nama Khmer ketemu dari halaman Inggris) |
+| `/{lang}/p/{slug}` | detail produk: video, foto, varian, harga + riel, kondisi, toko |
+| `/{lang}/s/{toko}` | halaman toko |
+| `/sitemap.xml`, `/robots.txt` | untuk Google |
+
+Hanya produk yang **aktif + disetujui moderator** dari **toko aktif** yang tampil. SEO: title/description per bahasa,
+canonical, hreflang (km/en/zh-Hans), JSON-LD Product/Offer/Video/Breadcrumb/Store, sitemap dengan hreflang.
+Isi `PUBLIC_BASE_URL` dengan domain asli saat online (dipakai untuk canonical & sitemap).
+
+### Cari dengan foto
+
+Tombol **Foto** di kotak pencarian (laptop: di header; HP: di halaman Cari & banner) → pembeli memotret / memilih foto →
+muncul produk yang mirip. Butuh layanan `embedder/` (Python + model CLIP), lihat `embedder/README.md`:
+
+```bash
+cd embedder && pip install -r requirements.txt && ./download-model.sh && python3 server.py
+# .env: EMBEDDER_URL=http://127.0.0.1:8090  → jalankan ulang make dev
+```
+
+Foto pembeli tidak disimpan. Maks 10 MB, 12 pencarian per menit per IP.
+
+### Data contoh (demo)
+
+```bash
+make migrate-up
+make seed-demo         # 8 toko + 39 produk (km/en/zh), langsung tampil di website
+make seed-demo-reset   # hapus semua data demo lalu buat ulang
+```
+
+Toko demo memakai slug `demo-…` dan pemilik HP `010000001`–`010000008` (login Seller Center seperti biasa, kode OTP muncul di log).
+Foto, logo & banner adalah gambar buatan (bukan foto asli); video dibuat dari foto kalau ffmpeg terpasang.
+Perintah ini menolak jalan di `APP_ENV=production` (kecuali `--force`) — **jangan** dijalankan di server asli.
+## Keranjang & checkout (KHQR)
+
+- Keranjang disimpan di browser; server selalu menghitung ulang harga & stok (`POST /v1/shop/cart/quote`).
+- Checkout: login OTP (SMS/Telegram) → alamat di peta (wajib di wilayah Sihanoukville) → **Bayar dengan KHQR**.
+- Satu pembayaran, dipecah menjadi **satu pesanan per toko** (komisi 8% dicatat per pesanan).
+- Stok **ditahan** saat menekan Bayar; lunas → stok terjual & seller dapat notifikasi; tidak dibayar dalam
+  `PAYMENT_LIFETIME_MIN` menit → pesanan batal & stok kembali.
+- Pembayaran baru dianggap lunas setelah dicek ke API PayWay (callback saja tidak cukup) dan nominalnya sama.
+- Pengembangan: `PAYMENT_PROVIDER=fake` → QR palsu + tombol **Simulasi bayar**. Akun PayWay sungguhan: lihat `GO-LIVE.md`.
+- Pembeli: `/{lang}/cart`, `/{lang}/checkout`, `/{lang}/orders` (status, riwayat, info refund).
+
+## Pesanan di Seller Center & refund
+
+- Tab **Pesanan** (pemilik & staf): Baru → Diproses → Siap dijemput → Dengan kurir → Selesai / Batal.
+- Seller wajib **menerima dalam 2 jam** setelah dibayar; lewat dari itu pesanan batal otomatis (worker) dan uang dikembalikan.
+- Tolak pesanan: pilih alasan (stok habis / tidak bisa dipenuhi / harga salah / lainnya). Stok kembali, kecuali alasan "stok habis".
+- **Cetak label paket** (100×150 mm) dengan barcode Code 128 nomor pesanan untuk dipindai kurir.
+- Seller tidak melihat nomor HP / alamat pembeli (pengantaran oleh kurir Phsar).
+- Pembeli dapat notifikasi Telegram (diterima / dibatalkan / refund terkirim) kalau login dengan Telegram.
+- **Refund manual**: admin (izin `refund.decide`, peran finance/super_admin) membuka menu **Refunds** di `/admin`,
+  mengembalikan uang di dashboard ABA PayWay (pakai nomor transaksi yang ditampilkan), lalu mencatat nomor referensinya.
 
 ## QA (cek semua kode)
 
@@ -161,17 +235,23 @@ nama opsi dan nilai varian ke dua bahasa lain lewat Claude (`ANTHROPIC_API_KEY`)
 - **Titik penjemputan** wajib per toko; produk baru tampil kalau titik sudah diverifikasi admin.
 - **Barang bekas** wajib catatan kondisi. **Produk** baru tampil kalau `moderation_status = approved`.
 - **Komisi** `commission_rules`: global 8% saat ini; bisa ditambah per kategori/toko dari admin tanpa ubah kode.
-- **Admin** finance & super_admin wajib MFA (dipaksa CHECK constraint).
+- **Admin**: semua peran wajib MFA saat login (API admin menolak sesi yang belum lolos MFA).
 
 ## Tahapan
 
 0. ✅ Fondasi: repo, migrasi Tahap 0–1, health, meta, cek wilayah, kategori, CI
 1. Rekrut seller: ✅ login Telegram (deep link bot) + SMS OTP + sesi per perangkat · ✅ API onboarding toko (toko, KYC, titik penjemputan, verifikasi admin) · ✅ Seller Center web (`/seller`) + halaman verifikasi admin (`/admin`) · ✅ tambah produk + varian + video/foto + terjemahan AI + moderasi produk ·
-   ⏳ transcode/kompres video & thumbnail, Facebook/Apple login, login admin + MFA, halaman audit
+   ✅ kompres video & thumbnail · ✅ login admin + MFA · ✅ admin sesuai template (dashboard, audit log, matriks peran) · ✅ paket deploy + mode pra-peluncuran · ⏳ Facebook/Apple login
 2. Pembeli melihat: website customer (SSR + SEO) + app Flutter (feed, cari, produk)
 3. Pembeli membeli: keranjang, checkout Sihanoukville, KHQR/ABA PayWay, ledger
 4. Pengiriman manual & setelah beli: siap dijemput, dispatch kurir, mode kurir, lacak, retur, ulasan
 5. Chat, notifikasi, payout manual, kepatuhan app store, legal → beta → submit store
+
+## Online di server
+
+Semua langkah ada di [`deploy/README.md`](deploy/README.md): siapkan Linode → `./phsar.sh secrets` → isi `deploy/.env` →
+`./phsar.sh check` → `./phsar.sh up`. Tahap awal memakai **mode pra-peluncuran** (`PAYMENT_PROVIDER=off`): seller sudah bisa
+daftar dan upload produk, pembeli melihat pita "segera dibuka" dan belum bisa checkout.
 
 ## Ke GitHub
 
@@ -179,3 +259,24 @@ nama opsi dan nilai varian ke dua bahasa lain lewat Claude (`ANTHROPIC_API_KEY`)
 git remote add origin git@github.com:<username>/phsar.git
 git push -u origin main
 ```
+
+## Kurir Phsar (staf)
+
+- Admin menambah kurir di `/admin` → **Delivery** (nomor HP + nama + kendaraan). Butuh izin `delivery.dispatch` (peran cs / super_admin).
+- Kurir membuka **`/courier`** di HP, login dengan nomor itu, lalu menyalakan **Online** (dapat notifikasi Telegram saat ada paket siap).
+- Alur: **Tersedia** → *Ambil tugas* → di toko **scan barcode label** (Chrome Android; iPhone: ketik nomor pesanan) → status pesanan
+  "Dengan kurir" → di tujuan *Terantar* (boleh dengan foto bukti, disimpan privat) atau *Gagal antar* dengan alasan.
+- Alamat & HP pembeli baru terlihat setelah kurir mengambil tugas. Label paket yang salah ditolak ("paket salah").
+- Admin: pantau tugas berjalan / gagal / terantar, tugaskan atau pindahkan ke kurir lain, buka foto bukti.
+- Pembeli & seller mendapat notifikasi saat paket dijemput dan saat terantar.
+
+## Saldo & payout seller
+
+- Pesanan terantar ditahan **N hari** (default 3, untuk komplain) → status *completed* → `seller_amount` masuk **saldo** seller
+  (buku besar `seller_ledger`, hanya ditambah, tidak pernah diubah).
+- **Jadwal** diatur admin di `/admin` → **Payouts**: harian atau mingguan (hari & jam, waktu Phnom Penh), masa tahan, minimal payout.
+  Worker membuat payout *pending* per toko sesuai jadwal; admin juga bisa menekan **Create payouts now**.
+- Admin mentransfer **manual** ke rekening seller (nomor lengkap hanya tampil untuk peran finance/super_admin dan dicatat di audit),
+  lalu mengisi nomor referensi transfer → *paid* → seller dapat notifikasi. Batal → saldo kembali.
+- Seller (pemilik) melihat saldo, jadwal, riwayat, dan mengisi rekening di tab **Payouts** Seller Center.
+  Nomor rekening disimpan terenkripsi (AES-GCM, `DATA_ENCRYPTION_KEY`). Ganti rekening → payout ditahan 48 jam.

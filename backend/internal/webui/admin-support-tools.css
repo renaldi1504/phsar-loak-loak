@@ -1,0 +1,7 @@
+/* Admin CS: pelanggan, detail pesanan, log pembayaran */
+.cols>div{flex:1 1 380px}.cols>div:first-child{flex:3 1 460px}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--pale,#fff5f8)}
+pre.json{max-height:320px;overflow:auto;background:#f7f6f9;border-radius:12px;padding:10px 12px;font-size:12px;white-space:pre-wrap;word-break:break-all;margin:8px 0 0}
+.timeline{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.timeline li{position:relative}.timeline li::before{content:"";position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--pink,#e8336d)}
+details summary{cursor:pointer}

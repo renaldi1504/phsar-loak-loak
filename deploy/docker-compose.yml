@@ -1,0 +1,129 @@
+# Phsar di server (Linode). Jalankan dari folder deploy/:  ./phsar.sh up
+# Semua rahasia ada di deploy/.env (salin dari env.production.example) — file itu tidak ikut git.
+#
+#   internet ──► caddy (80/443, HTTPS otomatis) ──► app (API + website + Seller Center + admin + kurir)
+#                                                    worker (terjemahan, batal pesanan, payout, media)
+#                                                    embedder (cari dengan foto)
+#                                                    db (Postgres 16) ◄── backup (dump harian ke ./backups)
+name: phsar
+
+x-backend: &backend
+  build: ../backend
+  image: phsar-backend:latest
+  env_file: .env
+  environment:
+    APP_ENV: ${APP_ENV:-production}   # staging = server testing (boleh PAYMENT_PROVIDER=fake & SMS_PROVIDER=log)
+    HTTP_ADDR: ":8080"
+    DATABASE_URL: postgres://phsar:${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD di deploy/.env}@db:5432/phsar?sslmode=disable
+    STORAGE_DIR: /home/phsar/data/uploads
+    EMBEDDER_URL: http://embedder:8090
+    WORKER_IN_SERVE: "false"
+    # Link di notifikasi (Telegram & push) membuka subdomain yang benar — lihat Caddyfile.
+    SELLER_BASE_URL: https://seller.${PHSAR_DOMAIN:?isi PHSAR_DOMAIN di deploy/.env}
+    ADMIN_BASE_URL: https://admin.${PHSAR_DOMAIN:?isi PHSAR_DOMAIN di deploy/.env}
+    TZ: Asia/Phnom_Penh
+  volumes:
+    - uploads:/home/phsar/data/uploads
+  restart: unless-stopped
+  logging: &logging
+    driver: json-file
+    options: { max-size: "20m", max-file: "5" }
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: phsar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD di deploy/.env}
+      POSTGRES_DB: phsar
+      TZ: Asia/Phnom_Penh
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U phsar -d phsar"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    logging: *logging
+
+  # Sekali jalan setiap deploy: naikkan skema database ke versi terbaru, lalu selesai.
+  migrate:
+    <<: *backend
+    command: ["migrate", "up"]
+    restart: "no"
+    depends_on:
+      db: { condition: service_healthy }
+
+  app:
+    <<: *backend
+    command: ["serve"]
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      embedder: { condition: service_started }
+
+  worker:
+    <<: *backend
+    command: ["worker"]
+    healthcheck: { disable: true }
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+      embedder: { condition: service_started }
+
+  embedder:
+    build: ../embedder
+    image: phsar-embedder:latest
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:8090/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 30s
+    restart: unless-stopped
+    logging: *logging
+
+  caddy:
+    image: caddy:2.8
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      PHSAR_DOMAIN: ${PHSAR_DOMAIN:?isi PHSAR_DOMAIN di deploy/.env}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      ROBOTS_TAG: ${ROBOTS_TAG:-all}   # staging: noindex (jangan sampai server testing muncul di Google)
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./errors:/srv/errors:ro   # halaman saat backend mati (Caddyfile: handle_errors)
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+    restart: unless-stopped
+    logging: *logging
+
+  # Backup: dump database setiap malam (simpan 14 hari) + arsip file upload setiap Minggu (simpan 4).
+  backup:
+    image: pgvector/pgvector:pg16
+    entrypoint: ["bash", "/scripts/backup-loop.sh"]
+    environment:
+      PGHOST: db
+      PGUSER: phsar
+      PGPASSWORD: ${POSTGRES_PASSWORD:?isi POSTGRES_PASSWORD di deploy/.env}
+      PGDATABASE: phsar
+      TZ: Asia/Phnom_Penh
+      BACKUP_HOUR: ${BACKUP_HOUR:-3}
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./scripts:/scripts:ro
+      - ./backups:/backups
+      - uploads:/uploads:ro
+    depends_on:
+      db: { condition: service_healthy }
+    restart: unless-stopped
+    logging: *logging
+
+volumes:
+  pgdata:
+  uploads:
+  caddy_data:
+  caddy_config:

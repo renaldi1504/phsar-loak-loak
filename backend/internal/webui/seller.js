@@ -1,7 +1,7 @@
 'use strict';
 P.authBase = '/seller/auth';
 addStrings({
-  en: {appName: 'Seller Center', logout: 'Sign out', myStores: 'My stores', createStore: 'Create your store', createSub: 'Fill in the basics. You can edit everything later.',
+  en: {oneStoreRule: 'One account can own one store. To sell under another name, use a different account.', oneStoreNote: 'One account can own only one store.', err_too_many_stores: 'One account can own only one store.', appName: 'Seller Center', logout: 'Sign out', myStores: 'My stores', createStore: 'Create your store', createSub: 'Fill in the basics. You can edit everything later.',
     storeName: 'Store name', storeAbout: 'About your store', writtenIn: 'Written in', aboutHint: 'Write in one language. We translate it to the other two automatically.',
     create: 'Create store', noStores: 'You don’t have a store yet.', open: 'Open', back: '← My stores',
     st_onboarding: 'Setting up', st_pending_review: 'Under review', st_active: 'Active', st_suspended: 'Suspended', st_closed: 'Closed',
@@ -23,7 +23,7 @@ addStrings({
     d_mon: 'Mon', d_tue: 'Tue', d_wed: 'Wed', d_thu: 'Thu', d_fri: 'Fri', d_sat: 'Sat', d_sun: 'Sun',
     err_validation: 'Please check the highlighted field.', err_slug_taken: 'That store address is taken. Try another name.', err_outside_service_area: 'That location is outside Sihanoukville.',
     err_store_under_review: 'Your store is under review.', err_upload_type: 'This file type is not allowed.', err_upload_too_large: 'The file is too large.', err_store_incomplete: 'Your store is not complete yet.'},
-  km: {appName: 'មជ្ឈមណ្ឌលអ្នកលក់', logout: 'ចាកចេញ', myStores: 'ហាងរបស់ខ្ញុំ', createStore: 'បង្កើតហាងរបស់អ្នក', createSub: 'បំពេញព័ត៌មានមូលដ្ឋាន។ អាចកែបានពេលក្រោយ។',
+  km: {oneStoreRule: 'គណនីមួយអាចមានហាងតែមួយ។ ដើម្បីលក់ក្រោមឈ្មោះផ្សេង សូមប្រើគណនីផ្សេង។', oneStoreNote: 'គណនីមួយអាចមានហាងតែមួយប៉ុណ្ណោះ។', err_too_many_stores: 'គណនីមួយអាចមានហាងតែមួយប៉ុណ្ណោះ។', appName: 'មជ្ឈមណ្ឌលអ្នកលក់', logout: 'ចាកចេញ', myStores: 'ហាងរបស់ខ្ញុំ', createStore: 'បង្កើតហាងរបស់អ្នក', createSub: 'បំពេញព័ត៌មានមូលដ្ឋាន។ អាចកែបានពេលក្រោយ។',
     storeName: 'ឈ្មោះហាង', storeAbout: 'អំពីហាង', writtenIn: 'សរសេរជា', aboutHint: 'សរសេរតែមួយភាសា។ យើងបកប្រែទៅភាសាពីរទៀតដោយស្វ័យប្រវត្តិ។',
     create: 'បង្កើតហាង', noStores: 'អ្នកមិនទាន់មានហាងទេ។', open: 'បើក', back: '← ហាងរបស់ខ្ញុំ',
     st_onboarding: 'កំពុងរៀបចំ', st_pending_review: 'កំពុងត្រួតពិនិត្យ', st_active: 'សកម្ម', st_suspended: 'ផ្អាក', st_closed: 'បិទ',
@@ -45,7 +45,7 @@ addStrings({
     d_mon: 'ច', d_tue: 'អ', d_wed: 'ព', d_thu: 'ព្រ', d_fri: 'សុ', d_sat: 'ស', d_sun: 'អា',
     err_validation: 'សូមពិនិត្យវាលដែលបានសម្គាល់។', err_slug_taken: 'អាសយដ្ឋានហាងនេះមានគេប្រើហើយ។', err_outside_service_area: 'ទីតាំងនៅក្រៅក្រុងព្រះសីហនុ។',
     err_store_under_review: 'ហាងកំពុងត្រួតពិនិត្យ។', err_upload_type: 'ប្រភេទឯកសារមិនអនុញ្ញាត។', err_upload_too_large: 'ឯកសារធំពេក។', err_store_incomplete: 'ហាងមិនទាន់គ្រប់ព័ត៌មាន។'},
-  zh: {appName: '卖家中心', logout: '退出', myStores: '我的店铺', createStore: '创建你的店铺', createSub: '先填写基本信息，之后都可以修改。',
+  zh: {oneStoreRule: '一个账号只能拥有一家店铺。如需用其他名称销售，请使用另一个账号。', oneStoreNote: '一个账号只能拥有一家店铺。', err_too_many_stores: '一个账号只能拥有一家店铺。', appName: '卖家中心', logout: '退出', myStores: '我的店铺', createStore: '创建你的店铺', createSub: '先填写基本信息，之后都可以修改。',
     storeName: '店铺名称', storeAbout: '店铺介绍', writtenIn: '书写语言', aboutHint: '只需用一种语言填写，系统会自动翻译成另外两种。',
     create: '创建店铺', noStores: '你还没有店铺。', open: '打开', back: '← 我的店铺',
     st_onboarding: '设置中', st_pending_review: '审核中', st_active: '已上线', st_suspended: '已暂停', st_closed: '已关闭',
@@ -90,11 +90,15 @@ async function render() {
   const inv = location.hash.match(/^#\/invite\/([0-9a-f]+)/);
   const pm = location.hash.match(/^#\/store\/([0-9a-f-]+)\/product\/(new|[0-9a-f-]+)/);
   const m = location.hash.match(/^#\/store\/([0-9a-f-]+)/);
+  const sub = location.hash.match(/^#\/store\/[0-9a-f-]+\/(home|more|orders|products|payouts|returns|help|chat|ads|flash|profile|kyc|pickup|team|hours|faq)(?:\/([0-9a-f-]{36}))?/);
+  if (sub && sub[1] === 'help') S.helpTicket = sub[2] || null; // support: buka tiket dari notifikasi
+  if (sub && sub[1] === 'chat') S.chatConv = sub[2] || null; // chat: buka percakapan dari notifikasi
+  if (sub) { S.tab = sub[1]; S.storeId = m[1]; try { sessionStorage.setItem('phsar-tab-' + m[1], sub[1]); } catch {} history.replaceState(null, '', '#/store/' + m[1]); }
   try {
     if (inv) await renderInvite(inv[1]);
     else if (pm) { if ($('#fName') && PF.E) readForm(); await renderProductEditor(pm[1], pm[2]); }
     else if (m) await renderStore(m[1]); else await renderStores();
-  } catch (e) { toast(errMsg(e)); }
+  } catch (e) { toast(errMsg(e), 'error'); }
   loadBell();
 }
 
@@ -105,17 +109,22 @@ async function renderStores() {
       <img class="logo" src="${esc(s.logo_url || '')}" alt="" onerror="this.style.visibility='hidden'">
       <div style="flex:1"><h2>${esc(s.name)}</h2><p class="muted">phsar.com/s/${esc(s.slug)}</p></div>${statusChip(s.status)}</div>
       <a class="btn" href="#/store/${s.id}">${t('open')}</a></article>`).join('');
+  const owns = S.stores.some(s => s.role === 'owner');
+  // 1 akun = 1 toko: kalau hanya punya satu toko (tanpa jadi staf di toko lain), langsung buka tokonya.
+  if (S.stores.length === 1 && owns && !S.storesShown) { S.storesShown = true; location.hash = '#/store/' + S.stores[0].id + '/home'; return; }
   $('#app').innerHTML = shell(`
     <h1>${t('myStores')}</h1>
     ${S.stores.length ? `<div class="grid">${list}</div>` : `<p class="muted">${t('noStores')}</p>`}
-    <section class="card" style="max-width:560px">
+    ${owns ? `<p class="muted">${t('oneStoreRule')}</p>` : `<section class="card" style="max-width:560px">
       <div><h2>${t('createStore')}</h2><p class="muted">${t('createSub')}</p></div>
       <label>${t('storeName')}<input id="cName" maxlength="80"></label>
       <label>${t('storeAbout')}<textarea id="cAbout" maxlength="2000"></textarea></label>
       <label>${t('writtenIn')}<select id="cLang"><option value="km">ខ្មែរ</option><option value="en">English</option><option value="zh">中文</option></select></label>
       <p class="muted">${t('aboutHint')}</p>
+      <p class="muted">${t('oneStoreNote')}</p>
       <button class="primary" id="cBtn" type="button" data-errors-anchor>${t('create')}</button>
-    </section>`);
+    </section>`}`);
+  if (owns) return;
   $('#cLang').value = P.lang;
   $('#cBtn').onclick = async () => {
     if (!checkRequired([['#cName', t('minChars', {n: 2}), el => el.value.trim().length >= 2]])) return;
@@ -126,65 +135,59 @@ async function renderStores() {
   };
 }
 
-// ---- Halaman satu toko ----
+// ---- Halaman satu toko (Seller Center v2: Hari ini · Pesanan · Produk · Uang · Lainnya) ----
+const storeTabs = () => ({home: tabHome, more: tabMore, help: tabHelp, flash: tabFlash, ads: tabAds, returns: tabReturns, orders: tabOrders,
+  payouts: tabPayouts, products: tabProducts, profile: tabProfile, kyc: tabKyc, pickup: tabPickup, team: tabTeam, hours: tabHours,
+  faq: abTab, chat: tabChat}); // askbot: Jawaban cepat & FAQ · chat:
 async function renderStore(id) {
-  const [st, kyc, pts] = await Promise.all([
+  const [st, kyc, pts, today] = await Promise.all([
     api(`/v1/seller/stores/${id}`),
     api(`/v1/seller/stores/${id}/kyc`).catch(() => ({kyc: null})),
     api(`/v1/seller/stores/${id}/pickup-points`),
+    api(`/v1/seller/stores/${id}/today`).catch(() => null),
   ]);
   const owner = st.role === 'owner';
-  if (S.storeId !== id) { S.storeId = id; S.tab = st.status === 'active' || !owner ? 'products' : 'profile'; }
-  if (!owner) S.tab = 'products'; // staf hanya mengelola produk
-  S.store = st; S.kyc = kyc.kyc; S.points = pts.pickup_points;
-  const c = st.checklist, locked = st.status === 'pending_review';
-  const item = (ok, label) => `<div class="check ${ok ? 'done' : ''}"><i>${ok ? '✓' : ''}</i>${label}</div>`;
-  const banner = st.status === 'pending_review' ? `<div class="banner warn">${t('reviewing')}</div>`
-    : st.status === 'active' ? `<div class="banner ok">${t('activeMsg')}</div>`
-    : st.review_note ? `<div class="banner bad"><b>${t('needsFix')}</b> ${esc(st.review_note)}</div>` : '';
-  $('#app').innerHTML = shell(`
-    <a href="#/">${t('back')}</a>
-    <div class="spread"><div class="row"><img class="logo" src="${esc(st.logo_url || '')}" alt="" onerror="this.style.visibility='hidden'">
-      <div><h1>${esc(st.name)}</h1><p class="muted">phsar.com/s/${esc(st.slug)}</p></div></div>${statusChip(st.status)}</div>
-    ${banner}
-    <section class="card">
-      <h2>${t('checklist')}</h2>
-      ${item(c.logo, t('ck_logo'))}${item(c.about, t('ck_about'))}
-      ${item(c.kyc !== 'missing', `${t('ck_kyc')} · <span class="muted">${t('kyc_' + c.kyc)}</span>`)}
-      ${item(c.pickup_points > 0, `${t('ck_pickup')} · <span class="muted">${c.pickup_points_verified}/${c.pickup_points} ${t('verified').toLowerCase()}</span>`)}
-      ${item(st.status === 'active', t('ck_review'))}
-      ${st.status === 'onboarding' && owner ? `<div class="row"><button class="primary" id="submitBtn" type="button" ${c.can_submit ? '' : 'disabled'}>${t('submit')}</button><span class="muted">${t('submitHint')}</span></div>` : ''}
-    </section>
-    ${owner ? '' : `<div class="banner info">${t('staffNote')}</div>`}
-    <div class="tabs" role="tablist">${(owner ? ['products', 'profile', 'kyc', 'pickup', 'team'] : ['products']).map(k =>
-      `<button type="button" role="tab" aria-selected="${S.tab === k}" onclick="S.tab='${k}';S.editing=null;render()">${t('tab' + k[0].toUpperCase() + k.slice(1))}</button>`).join('')}</div>
-    <div id="tab"></div>`);
-  if ($('#submitBtn')) $('#submitBtn').onclick = async () => {
-    try { await api(`/v1/seller/stores/${id}/submit`, {method: 'POST'}); render(); } catch (e) { toast(errMsg(e)); }
-  };
-  await ({products: tabProducts, profile: tabProfile, kyc: tabKyc, pickup: tabPickup, team: tabTeam})[S.tab](id, locked);
+  if (S.storeId !== id) {
+    S.storeId = id;
+    let saved = null;
+    try { saved = sessionStorage.getItem('phsar-tab-' + id); } catch {}
+    S.tab = saved || 'home';
+  }
+  const allowed = owner ? Object.keys(storeTabs()) : ['home', 'more', 'orders', 'returns', 'products', 'help', 'faq', 'chat']; // staf: pesanan, retur, produk, FAQ (askbot), chat
+  if (!allowed.includes(S.tab)) S.tab = 'home';
+  S.store = st; S.kyc = kyc.kyc; S.points = pts.pickup_points; V2.today = today;
+  const locked = st.status === 'pending_review';
+  const banner = locked && ['profile', 'kyc', 'pickup'].includes(S.tab) ? `<div class="banner warn">${t('reviewing')}</div>`
+    : st.status === 'suspended' && S.tab !== 'home' ? `<div class="banner bad">${t('su_suspended')}</div>`
+    : st.review_note && st.status === 'onboarding' && ['profile', 'kyc', 'pickup'].includes(S.tab) ? `<div class="banner bad"><b>${t('needsFix')}</b> ${esc(st.review_note)}</div>` : '';
+  $('#app').innerHTML = storeShell(st, `<div id="storeAlerts"></div>${v2Header(S.tab)}${banner}<div id="tab"></div>`);
+  if (typeof sellerStrikes === 'function') sellerStrikes(id); // reports:
+  await storeTabs()[S.tab](id, locked);
+  if (typeof tourSeller === 'function') tourSeller(id); // tour: tur cara pakai (seller-tour.js)
 }
 
 function tabProfile(id, locked) {
   const st = S.store, aboutLang = Object.keys(st.about).find(l => st.about[l]) || P.lang;
-  $('#tab').innerHTML = `<section class="card">
+  // sellerpages: pratinjau toko di atas, lalu nama & deskripsi, lalu sosial (opsional); satu tombol Simpan.
+  $('#tab').innerHTML = `<h2 class="sp-sub">${t('spPfLook')}</h2><section class="card sp-look">
     <div class="store-banner">${st.banner_url ? `<img src="${esc(st.banner_url)}" alt="">` : `<span class="muted">${t('bannerHint')}</span>`}</div>
-    <div class="row"><label class="btn" style="flex-direction:row">${st.banner_url ? t('changeBanner') : t('uploadBanner')}<input type="file" id="bannerFile" accept="image/jpeg,image/png,image/webp" class="hidden" ${locked ? 'disabled' : ''}></label>
-      <span class="muted">${t('bannerSize')}</span></div>
-    <div class="row"><img class="logo" id="logoImg" src="${esc(st.logo_url || '')}" alt="" onerror="this.style.visibility='hidden'">
-      <label class="btn" style="flex-direction:row">${t('uploadLogo')}<input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp" class="hidden" ${locked ? 'disabled' : ''}></label></div>
+    <div class="sp-who"><img class="logo" id="logoImg" src="${esc(st.logo_url || '')}" alt="" onerror="this.style.visibility='hidden'"><b>${esc(st.name)}</b></div>
+    <div class="sp-pbtns"><label class="btn">🖼 ${st.banner_url ? t('changeBanner') : t('uploadBanner')}<input type="file" id="bannerFile" accept="image/jpeg,image/png,image/webp" class="hidden" ${locked ? 'disabled' : ''}></label>
+      <label class="btn">🏪 ${st.logo_url ? t('spPfLogo') : t('uploadLogo')}<input type="file" id="logoFile" accept="image/jpeg,image/png,image/webp" class="hidden" ${locked ? 'disabled' : ''}></label></div>
+    <p class="muted small">${t('bannerSize')}</p></section>
+    <section class="card"><h2>${t('spPfName')}</h2>
     <label>${t('storeName')}<input id="pName" value="${esc(st.name)}" maxlength="80"></label>
-    <label>${t('storeAbout')}<textarea id="pAbout" maxlength="2000">${esc(st.about[aboutLang] || '')}</textarea></label>
+    <label>${t('storeAbout')}<textarea id="pAbout" maxlength="2000" rows="4">${esc(st.about[aboutLang] || '')}</textarea></label>
     <label>${t('writtenIn')}<select id="pLang"><option value="km">ខ្មែរ</option><option value="en">English</option><option value="zh">中文</option></select></label>
-    <p class="muted">${t('aboutHint')}</p>
-    <h2>${t('social')}</h2>
-    <div class="grid">${['telegram', 'facebook', 'tiktok'].map(k => `<label>${k[0].toUpperCase() + k.slice(1)}<input id="soc_${k}" value="${esc(st.social_links?.[k] || '')}" maxlength="200"></label>`).join('')}</div>
-    <div data-errors-anchor><button class="primary" id="pSave" type="button" ${locked ? 'disabled' : ''}>${t('save')}</button></div></section>`;
+    <p class="muted" style="margin:0">${t('aboutHint')}</p></section>
+    <section class="card"><h2>${t('social')}</h2><p class="muted" style="margin:0">${t('spPfSocialW')}</p>
+    ${['telegram', 'facebook', 'tiktok'].map(k => `<label>${k[0].toUpperCase() + k.slice(1)}<input id="soc_${k}" value="${esc(st.social_links?.[k] || '')}" maxlength="200"></label>`).join('')}</section>
+    <div data-errors-anchor><button class="primary sp-block" id="pSave" type="button" ${locked ? 'disabled' : ''}>${t('save')}</button></div>`;
   $('#pLang').value = aboutLang;
   $('#bannerFile').onchange = async e => {
     const f = e.target.files[0];
     if (!f) return;
-    if (f.size > 8 * 1024 * 1024) { toast(t('err_upload_too_large')); return; }
+    if (f.size > 8 * 1024 * 1024) { toast(t('err_upload_too_large'), 'error'); return; }
     try {
       const up = await upload('store_banner', f);
       await api(`/v1/seller/stores/${id}`, {method: 'PATCH', body: {banner_key: up.key}});
@@ -196,7 +199,7 @@ function tabProfile(id, locked) {
       const up = await upload('store_logo', e.target.files[0]);
       await api(`/v1/seller/stores/${id}`, {method: 'PATCH', body: {logo_key: up.key}});
       toast(t('saved')); render();
-    } catch (err) { toast(errMsg(err)); }
+    } catch (err) { toast(errMsg(err), 'error'); }
   };
   $('#pSave').onclick = async () => {
     const social = {};
@@ -212,20 +215,26 @@ function tabProfile(id, locked) {
 function tabKyc(id) {
   const k = S.kyc || {}, status = k.verification_status || 'missing', done = status === 'verified';
   const chip = {missing: '', pending: 'warn', verified: 'ok', rejected: 'bad'}[status];
-  $('#tab').innerHTML = `<section class="card">
-    <div class="spread"><p class="muted">${t('kycIntro')}</p><span class="chip ${chip}">${t('kycStatus')}: ${t('kyc_' + status)}</span></div>
+  // sellerpages: status besar di atas + 3 langkah bernomor; data pajak (opsional) dilipat.
+  const sIcon = {missing: '🪪', pending: '⏳', verified: '✅', rejected: '⚠️'}[status];
+  const dis = done ? 'disabled' : '';
+  $('#tab').innerHTML = `<div class="sp-status ${chip}" role="status"><span class="si" aria-hidden="true">${sIcon}</span><div>
+      <b>${t('kycStatus')}: ${t('spKy_' + status)}</b><p>${t('spKy_' + status + 'W')}</p></div></div>
     ${k.rejection_note ? `<div class="banner bad">${esc(k.rejection_note)}</div>` : ''}
-    <label>${t('sellerType')}<select id="kType" ${done ? 'disabled' : ''}>${['individual_unregistered', 'individual_registered', 'company'].map(v => `<option value="${v}">${t('t_' + v)}</option>`).join('')}</select></label>
-    <label>${t('legalName')}<input id="kName" value="${esc(k.legal_name || '')}" maxlength="120" ${done ? 'disabled' : ''}></label>
-    <label>${t('idDoc')}<input type="file" id="kDoc" accept="image/jpeg,image/png,image/webp,application/pdf" ${done ? 'disabled' : ''}></label>
-    <p class="muted" id="kDocState">${k.has_id_document ? '✓ ' + t('idDocDone') : ''}</p>
-    <div class="grid"><label>${t('tin')} <span class="muted">(${t('optional')})</span><input id="kTin" value="${esc(k.tin || '')}" ${done ? 'disabled' : ''}></label>
-      <label>${t('mocNo')} <span class="muted">(${t('optional')})</span><input id="kMoc" value="${esc(k.moc_license_no || '')}" ${done ? 'disabled' : ''}></label></div>
-    <div data-errors-anchor><button class="primary" id="kSave" type="button" ${done ? 'disabled' : ''}>${t('save')}</button></div></section>`;
+    <section class="card">
+    <div class="sp-num"><span class="n" aria-hidden="true">1</span><label>${t('sellerType')}<select id="kType" ${dis}>${['individual_unregistered', 'individual_registered', 'company'].map(v => `<option value="${v}">${t('t_' + v)}</option>`).join('')}</select></label></div>
+    <div class="sp-num"><span class="n" aria-hidden="true">2</span><label>${t('legalName')}<input id="kName" value="${esc(k.legal_name || '')}" maxlength="120" ${dis}></label></div>
+    <div class="sp-num"><span class="n" aria-hidden="true">3</span><div><label class="sp-file">📷 ${t('idDoc')}<small>${t('spKyFileW')}</small><input type="file" id="kDoc" accept="image/jpeg,image/png,image/webp,application/pdf" ${dis}></label>
+      <p class="muted" id="kDocState" style="margin:6px 0 0;color:var(--ok);font-weight:700">${k.has_id_document ? '✓ ' + t('idDocDone') : ''}</p></div></div>
+    <details class="sp-more" id="spKyMore" ${k.tin || k.moc_license_no ? 'open' : ''}><summary>${t('spKyMore')}</summary><div>
+      <label>${t('tin')} <span class="muted">(${t('optional')})</span><input id="kTin" value="${esc(k.tin || '')}" ${dis}></label>
+      <label>${t('mocNo')} <span class="muted">(${t('optional')})</span><input id="kMoc" value="${esc(k.moc_license_no || '')}" ${dis}></label></div></details>
+    <div data-errors-anchor><button class="primary sp-block" id="kSave" type="button" ${dis}>${t('save')}</button></div>
+    <p class="sp-lock">🔒 ${t('kycIntro')}</p></section>`;
   if (k.seller_type) $('#kType').value = k.seller_type;
   let docKey = null;
   $('#kDoc').onchange = async e => {
-    try { docKey = (await upload('kyc_document', e.target.files[0])).key; $('#kDocState').textContent = '✓ ' + t('idDocDone'); } catch (err) { toast(errMsg(err)); }
+    try { docKey = (await upload('kyc_document', e.target.files[0])).key; $('#kDocState').textContent = '✓ ' + t('idDocDone'); } catch (err) { toast(errMsg(err), 'error'); }
   };
   $('#kSave').onclick = async () => {
     if (!checkRequired([['#kName'], ['#kDoc', t('required'), () => !!(docKey || k.has_id_document)]])) return;
@@ -233,20 +242,23 @@ function tabKyc(id) {
       await api(`/v1/seller/stores/${id}/kyc`, {method: 'PUT', body: {seller_type: $('#kType').value, legal_name: $('#kName').value,
         id_document_key: docKey || '', tin: $('#kTin').value, moc_license_no: $('#kMoc').value}});
       toast(t('saved')); render();
-    } catch (e) { showError(e, {seller_type: '#kType', legal_name: '#kName', id_document_key: '#kDoc', media: '#kDoc', tin: '#kTin', moc_license_no: '#kMoc'}); }
+    } catch (e) { if (/^(tin|moc_license_no)$/.test(e.field || '')) $('#spKyMore').open = true; showError(e, {seller_type: '#kType', legal_name: '#kName', id_document_key: '#kDoc', media: '#kDoc', tin: '#kTin', moc_license_no: '#kMoc'}); }
   };
 }
 
 function tabPickup(id, locked) {
-  const list = S.points.map(p => `<article class="card"><div class="spread"><h2>${esc(p.label)}</h2>
-      <div class="row">${p.is_default ? `<span class="chip pink">${t('default')}</span>` : ''}<span class="chip ${p.verified ? 'ok' : 'warn'}">${p.verified ? t('verified') : t('notVerified')}</span></div></div>
-      <p>${esc(p.address_line)}</p><p class="muted">${esc(p.contact_name)} · ${esc(p.contact_phone)}</p>
-      <p class="muted">${DAYS.filter(d => p.pickup_hours[d]).map(d => `${t('d_' + d)} ${p.pickup_hours[d].join('–')}`).join(' · ')}</p>
+  // sellerpages: kartu titik jemput yang mudah dibaca + kosong-state dengan ajakan menambah.
+  const list = S.points.map(p => `<article class="card sp-pt"><div class="spread"><h2>${esc(p.label)}</h2>
+      <div class="sp-chips">${p.is_default ? `<span class="chip pink">${t('default')}</span>` : ''}<span class="chip ${p.verified ? 'ok' : 'warn'}">${p.verified ? t('verified') : t('notVerified')}</span></div></div>
+      <p class="sp-ln"><span aria-hidden="true">📍</span><span>${esc(p.address_line)}</span></p><p class="sp-ln"><span aria-hidden="true">👤</span><span>${esc(p.contact_name)} · ${esc(p.contact_phone)}</span></p>
+      <p class="sp-ln sp-hh"><span aria-hidden="true">🕘</span><span>${DAYS.filter(d => p.pickup_hours[d]).map(d => `${t('d_' + d)} ${p.pickup_hours[d].join('–')}`).join(' · ')}</span></p>
       ${p.rejection_note ? `<div class="banner bad">${esc(p.rejection_note)}</div>` : ''}
-      <div class="row"><button type="button" onclick="editPoint('${p.id}')" ${locked ? 'disabled' : ''}>${t('edit')}</button>
+      <div class="sp-row2"><button type="button" onclick="editPoint('${p.id}')" ${locked ? 'disabled' : ''}>✏️ ${t('edit')}</button>
       <button type="button" class="danger" onclick="deletePoint('${id}','${p.id}')" ${locked ? 'disabled' : ''}>${t('del')}</button></div></article>`).join('');
-  $('#tab').innerHTML = `<p class="muted">${t('pickupIntro')}</p><div class="grid">${list}</div>
-    ${locked ? '' : S.editing ? pickupForm() : `<div><button class="primary" type="button" onclick="editPoint('new')">${t('addPickup')}</button></div>`}`;
+  const add = `<button class="primary sp-block" type="button" onclick="editPoint('new')">+ ${t('addPickup')}</button>`;
+  $('#tab').innerHTML = S.points.length || S.editing ? `<p class="ohelp">🛵 ${t('pickupIntro')}</p>${list}
+    ${locked ? '' : S.editing ? pickupForm() : add}`
+    : spEmpty('📍', t('spPkNoneT'), t('pickupIntro'), locked ? '' : add);
   if (S.editing) bindPickupForm(id);
 }
 
@@ -257,26 +269,33 @@ function editPoint(pid) {
   render();
 }
 async function deletePoint(sid, pid) {
-  try { await api(`/v1/seller/stores/${sid}/pickup-points/${pid}`, {method: 'DELETE'}); render(); } catch (e) { toast(errMsg(e)); }
+  if (!confirm(t('spPkDelQ'))) return; // sellerpages: konfirmasi sebelum hapus
+  try { await api(`/v1/seller/stores/${sid}/pickup-points/${pid}`, {method: 'DELETE'}); render(); } catch (e) { toast(errMsg(e), 'error'); }
 }
 
 function pickupForm() {
   const p = S.editing;
-  return `<section class="card"><h2>${p.id ? t('editPickup') : t('addPickup')}</h2>
+  const h3 = (n, k) => `<h3><span class="n" aria-hidden="true">${n}</span>${t(k)}</h3>`;
+  // sellerpages: formulir dibagi 4 bagian bernomor; jam jemput tidak lagi melebar di HP.
+  return `<section class="card sp-form"><h2>${p.id ? t('editPickup') : t('addPickup')}</h2>
+    ${h3(1, 'spPkS1')}
     ${Maps.google() ? `<div class="field"><span class="flabel">${t('searchPlace')}</span><div id="placeSearch" class="place-wrap"></div></div><p class="muted">${t('searchHint')}</p>` : ''}
     <div id="map" class="map"></div>
     <div class="spread"><p class="muted" id="pinState">${t('pinNone')}</p><button type="button" id="myLoc">📍 ${t('myLocation')}</button></div>
+    ${h3(2, 'spPkS2')}
     <div class="grid"><label>${t('label')}<input id="fLabel" value="${esc(p.label || '')}" placeholder="${t('labelPh')}" maxlength="60"></label>
       <label>${t('address')}<input id="fAddr" value="${esc(p.address_line || '')}" placeholder="${t('addressPh')}" maxlength="300"></label>
       <label>${t('contactName')}<input id="fCName" value="${esc(p.contact_name || '')}"></label>
       <label>${t('contactPhone')}<input id="fCPhone" value="${esc(p.contact_phone || '')}" inputmode="tel"></label></div>
-    <fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px"><legend style="font-size:13px;font-weight:700;margin-bottom:6px">${t('hours')}</legend>
+    ${h3(3, 'spPkS3')}
+    <fieldset style="border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px"><legend class="sr-only" style="position:absolute;left:-9999px">${t('hours')}</legend>
       <div class="hours">${DAYS.map(d => { const h = p.pickup_hours?.[d]; return `<label style="flex-direction:row;align-items:center"><input type="checkbox" id="h_${d}" ${h ? 'checked' : ''}> ${t('d_' + d)}</label>
         <input type="time" id="hf_${d}" value="${h ? h[0] : '09:00'}" aria-label="${t('d_' + d)} from"><input type="time" id="ht_${d}" value="${h ? h[1] : '17:00'}" aria-label="${t('d_' + d)} to">`; }).join('')}</div></fieldset>
+    ${h3(4, 'spPkS4')}
     <label>${t('note')} <textarea id="fNote" maxlength="500">${esc(p.note || '')}</textarea></label>
     <label>${t('photo')} <span class="muted">(${t('optional')})</span><input type="file" id="fPhoto" accept="image/jpeg,image/png,image/webp"></label>
-    <label style="flex-direction:row;align-items:center;gap:8px"><input type="checkbox" id="fDefault" style="width:20px;min-height:20px;accent-color:var(--pink)" ${p.is_default ? 'checked' : ''}> ${t('makeDefault')}</label>
-    <div class="row" data-errors-anchor><button class="primary" id="fSave" type="button">${t('save')}</button><button type="button" onclick="S.editing=null;render()">${t('cancel')}</button></div></section>`;
+    <label style="flex-direction:row;align-items:center;gap:8px;min-height:44px"><input type="checkbox" id="fDefault" style="width:20px;min-height:20px;accent-color:var(--pink)" ${p.is_default ? 'checked' : ''}> ${t('makeDefault')}</label>
+    <div class="sp-acts" data-errors-anchor><button class="primary sp-block" id="fSave" type="button">${t('save')}</button><button type="button" class="textbtn" onclick="S.editing=null;render()">${t('cancel')}</button></div></section>`;
 }
 
 async function checkPin() {
@@ -284,7 +303,7 @@ async function checkPin() {
   try {
     const r = await api(`/v1/app/service-areas/check?lat=${S.pin[0]}&lng=${S.pin[1]}`);
     $('#pinState').innerHTML = `<span class="chip ${r.served ? 'ok' : 'bad'}">${r.served ? t('pinInside') : t('pinOutside')}</span> <span class="muted">${S.pin[0].toFixed(5)}, ${S.pin[1].toFixed(5)}</span>`;
-  } catch (e) { toast(errMsg(e)); }
+  } catch (e) { toast(errMsg(e), 'error'); }
 }
 
 async function bindPickupForm(id) {
@@ -309,13 +328,13 @@ async function bindPickupForm(id) {
   checkPin();
   $('#myLoc').onclick = async () => {
     const picker = await pickerP;
-    if (!navigator.geolocation) { toast(t('noGeo')); return; }
+    if (!navigator.geolocation) { toast(t('noGeo'), 'warning'); return; }
     navigator.geolocation.getCurrentPosition(
       pos => { S.placeId = ''; picker.setPin({lat: pos.coords.latitude, lng: pos.coords.longitude}); },
-      () => toast(t('noGeo')), {enableHighAccuracy: true, timeout: 10000});
+      () => toast(t('noGeo'), 'warning'), {enableHighAccuracy: true, timeout: 10000});
   };
   let photoKey = '';
-  $('#fPhoto').onchange = async e => { try { photoKey = (await upload('pickup_photo', e.target.files[0])).key; } catch (err) { toast(errMsg(err)); } };
+  $('#fPhoto').onchange = async e => { try { photoKey = (await upload('pickup_photo', e.target.files[0])).key; } catch (err) { toast(errMsg(err), 'error'); } };
   $('#fSave').onclick = async () => {
     if (!checkRequired([
       ['#map', t('pinNone'), () => !!S.pin],

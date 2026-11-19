@@ -1,0 +1,12 @@
+/* Flash sale: admin (sesi & barang) dan Seller Center (promosi) */
+.fs-card{cursor:pointer}.fs-card:hover{border-color:var(--pink,#e8336d)}
+.fs-fund{border:1px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin:0}
+.fs-fund legend{font-weight:700;padding:0 6px}
+.fs-table td{vertical-align:middle}.fs-table .fs-act{white-space:nowrap}.fs-table .fs-act button{margin-left:4px}
+.fs-prod{display:flex;gap:10px;align-items:center;min-width:200px}.fs-prod img,.fs-noimg{width:44px;height:44px;border-radius:10px;object-fit:cover;background:#f1edf1;flex:none}
+.fs-in{max-width:96px;min-height:36px;padding:4px 8px}.fs-in.sm{max-width:72px}
+.fs-results{display:flex;flex-direction:column;gap:4px;max-height:320px;overflow:auto}
+.fs-res{display:flex;flex-direction:row;justify-content:flex-start;text-align:left;font-weight:400;gap:10px;align-items:center;padding:6px 8px;border-radius:10px;cursor:pointer;font-size:14px}.fs-res:hover{background:var(--pale,#fff5f8)}
+.fs-res input{width:18px;height:18px;flex:none}
+.fs-bulk{align-items:flex-end;gap:10px}
+.sf-ses{border-top:1px solid var(--line);padding-top:12px}.sf-ses:first-of-type{border-top:0;padding-top:0}.sf-picker{margin-top:12px;display:flex;flex-direction:column;gap:10px}

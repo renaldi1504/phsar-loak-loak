@@ -1,0 +1,3 @@
+/* tour: kartu "Tur panduan" di halaman Bantuan Seller Center (gaya tur ada di tour.css). */
+.tourhelp .tourbtns{display:flex;flex-wrap:wrap;gap:10px}
+.tourhelp .tourbtns button{min-height:44px;border-radius:999px}

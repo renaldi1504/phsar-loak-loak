@@ -24,6 +24,17 @@ func (s *Service) Routes(audience string) http.Handler {
 	r.Post("/telegram/poll", s.handleTelegramPoll)
 	r.Post("/refresh", s.handleRefresh)
 	r.Post("/logout", s.handleLogout)
+	r.Post("/facebook", func(w http.ResponseWriter, r *http.Request) { s.handleFacebookToken(w, r, audience) })
+	if audience == "app" {
+		r.Post("/guest", func(w http.ResponseWriter, r *http.Request) {
+			pair, err := s.GuestSession(r.Context(), string(i18n.From(r.Context())), client(r, r.Header.Get("X-Device-Name")))
+			if err != nil {
+				s.fail(w, err)
+				return
+			}
+			writeJSON(w, http.StatusOK, pair)
+		})
+	}
 	return r
 }
 
@@ -99,6 +110,10 @@ func (s *Service) handleOTPRequest(w http.ResponseWriter, r *http.Request) {
 		Phone string `json:"phone"`
 	}
 	if !decode(w, r, &in) {
+		return
+	}
+	if !s.SMSEnabled(r.Context()) {
+		writeErr(w, http.StatusServiceUnavailable, "sms_disabled", "SMS login is not available yet. Please continue with Telegram.")
 		return
 	}
 	phone, err := s.RequestOTP(r.Context(), in.Phone, string(i18n.From(r.Context())), client(r, ""))
@@ -191,14 +206,25 @@ func (s *Service) fail(w http.ResponseWriter, err error) {
 		code   string
 	}
 	table := map[error]m{
-		ErrBadPhone:         {http.StatusBadRequest, "phone_invalid"},
-		ErrOTPTooSoon:       {http.StatusTooManyRequests, "otp_too_soon"},
-		ErrOTPTooMany:       {http.StatusTooManyRequests, "otp_rate_limited"},
-		ErrOTPInvalid:       {http.StatusUnauthorized, "otp_invalid"},
-		ErrOTPExhausted:     {http.StatusUnauthorized, "otp_exhausted"},
-		ErrSessionInvalid:   {http.StatusUnauthorized, "session_invalid"},
-		ErrUserSuspended:    {http.StatusForbidden, "user_suspended"},
-		ErrTelegramDisabled: {http.StatusServiceUnavailable, "telegram_disabled"},
+		ErrBadPhone:           {http.StatusBadRequest, "phone_invalid"},
+		ErrOTPTooSoon:         {http.StatusTooManyRequests, "otp_too_soon"},
+		ErrOTPTooMany:         {http.StatusTooManyRequests, "otp_rate_limited"},
+		ErrOTPInvalid:         {http.StatusUnauthorized, "otp_invalid"},
+		ErrOTPExhausted:       {http.StatusUnauthorized, "otp_exhausted"},
+		ErrSessionInvalid:     {http.StatusUnauthorized, "session_invalid"},
+		ErrUserSuspended:      {http.StatusForbidden, "user_suspended"},
+		ErrTelegramDisabled:   {http.StatusServiceUnavailable, "telegram_disabled"},
+		ErrNotAdmin:           {http.StatusForbidden, "not_admin"},
+		ErrMFARequired:        {http.StatusForbidden, "mfa_required"},
+		ErrMFAInvalid:         {http.StatusUnauthorized, "mfa_invalid"},
+		ErrMFALocked:          {http.StatusTooManyRequests, "mfa_locked"},
+		ErrMFANotEnrolled:     {http.StatusConflict, "mfa_not_enrolled"},
+		ErrMFAAlreadyEnrolled: {http.StatusConflict, "mfa_enrolled"},
+		ErrMFAUnavailable:     {http.StatusServiceUnavailable, "mfa_unavailable"},
+		ErrSMSFailed:          {http.StatusBadGateway, "sms_failed"},
+		ErrFacebookDisabled:   {http.StatusServiceUnavailable, "facebook_disabled"},
+		ErrFacebookFailed:     {http.StatusUnauthorized, "facebook_failed"},
+		ErrGuestLimit:         {http.StatusTooManyRequests, "guest_rate_limited"},
 	}
 	for e, v := range table {
 		if errors.Is(err, e) {
@@ -235,3 +261,6 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func writeErr(w http.ResponseWriter, status int, code, msg string) {
 	writeJSON(w, status, map[string]any{"error": map[string]string{"code": code, "message": msg}})
 }
+
+// ClientFrom: IP & perangkat dari permintaan (untuk pencatatan percobaan login/MFA).
+func ClientFrom(r *http.Request) ClientInfo { return client(r, "") }

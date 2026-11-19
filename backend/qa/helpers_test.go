@@ -128,7 +128,9 @@ func getEnv(t *testing.T) *env {
 		Env: "development", PublicBaseURL: "http://qa.local", DatabaseURL: dbURL, DefaultLang: "en", LogLevel: "error",
 		JWTSecret: "qa-secret-0123456789-0123456789-0123456789", TelegramMode: "off", SMSProvider: "log",
 		StorageDir: t.TempDir(), Translator: "fake", GoogleMapsKey: "qa-maps-key", GoogleMapsMapID: "DEMO_MAP_ID",
+		PaymentProvider: "fake", PaymentLifetimeMin: 15, DataKey: "cWEtb25seS1kYXRhLWtleS0zMi1ieXRlcy0tLS0tLS0=",
 	}
+	cfg.EmbedderURL = fakeEmbedder().URL // cari-dengan-foto: embedder palsu (vektor dari warna rata-rata)
 	if dir, err := os.MkdirTemp("", "phsar-qa-uploads-"); err == nil {
 		cfg.StorageDir = dir // t.TempDir() milik tes pertama saja; folder ini dipakai semua tes
 	}
@@ -170,6 +172,9 @@ type statusRecorder struct {
 }
 
 func (s *statusRecorder) WriteHeader(code int) { s.status = code; s.ResponseWriter.WriteHeader(code) }
+
+// Unwrap: http.ResponseController (Flush untuk aliran SSE) bisa mencapai writer asli.
+func (s *statusRecorder) Unwrap() http.ResponseWriter { return s.ResponseWriter }
 
 func TestMain(m *testing.M) {
 	code := m.Run()
@@ -406,7 +411,7 @@ func (e *env) drainMedia(t *testing.T) {
 	if e.media == nil {
 		return
 	}
-	for i := 0; i < 50; i++ {
+	for i := 0; i < 1000; i++ { // antrean dipakai bersama semua tes sebelumnya (tidak pernah dikosongkan di antaranya)
 		did, err := e.media.RunOnce(context.Background())
 		if err != nil {
 			t.Fatalf("worker media: %v", err)

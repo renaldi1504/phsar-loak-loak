@@ -15,6 +15,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"phsar/internal/jobs"
 	"phsar/internal/storage"
 )
 
@@ -43,15 +44,8 @@ func (w *Worker) Run(ctx context.Context) {
 	t := time.NewTicker(w.Interval)
 	defer t.Stop()
 	for {
-		for {
-			did, err := w.RunOnce(ctx)
-			if err != nil && ctx.Err() == nil {
-				w.Log.Error("worker media", "err", err)
-				break
-			}
-			if !did || ctx.Err() != nil {
-				break
-			}
+		if _, err := jobs.Drain(ctx, w.Pool, "media.queue", w.RunOnce); err != nil && ctx.Err() == nil { // jobs: kosongkan antrean
+			w.Log.Error("worker media", "err", err)
 		}
 		select {
 		case <-ctx.Done():

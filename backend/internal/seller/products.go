@@ -18,7 +18,9 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/shopspring/decimal"
 
+	"phsar/internal/modrules"
 	"phsar/internal/money"
+	"phsar/internal/paging"
 	"phsar/internal/platform/db"
 	"phsar/internal/storage"
 )
@@ -30,15 +32,17 @@ var (
 
 // Aturan minimal saat produk dikirim ke moderasi.
 const (
-	requireVideo = true // Phsar = video commerce: setiap produk punya satu video
-	maxPhotos    = 9
-	maxDefects   = 6
-	maxOptions   = 3
-	maxValues    = 30
-	maxVariants  = 100
-	maxPrice     = 100000
-	maxStock     = 100000
-	maxDescRunes = 5000
+	// Video tidak wajib (banyak seller hanya punya foto) tapi sangat disarankan:
+	// produk tanpa video harus punya foto lebih banyak supaya pembeli tetap yakin.
+	minPhotosNoVideo = 3
+	maxPhotos        = 9
+	maxDefects       = 6
+	maxOptions       = 3
+	maxValues        = 30
+	maxVariants      = 100
+	maxPrice         = 100000
+	maxStock         = 100000
+	maxDescRunes     = 5000
 )
 
 var (
@@ -120,6 +124,8 @@ type Product struct {
 	MaxPrice         *string        `json:"max_price"`
 	TotalStock       int            `json:"total_stock"`
 	AutoFlags        map[string]any `json:"auto_flags"`
+	ReviewLane       *string        `json:"review_lane"`         // auto · manual (jalur moderasi terakhir)
+	PostReview       bool           `json:"post_review_pending"` // tayang otomatis, belum dilihat admin
 	SubmittedAt      *time.Time     `json:"submitted_at"`
 	PublishedAt      *time.Time     `json:"published_at"`
 	CreatedAt        time.Time      `json:"created_at"`
@@ -413,11 +419,11 @@ func checkSubmission(in ProductInput) error {
 	for _, m := range in.Media {
 		counts[m.Kind]++
 	}
-	if requireVideo && counts["video"] == 0 {
-		return invalid("media", "tambahkan satu video produk")
-	}
 	if counts["photo"] == 0 {
 		return invalid("media", "tambahkan minimal satu foto (dipakai sebagai sampul)")
+	}
+	if counts["video"] == 0 && counts["photo"] < minPhotosNoVideo {
+		return invalid("media", fmt.Sprintf("tanpa video, tambahkan minimal %d foto dari sudut berbeda", minPhotosNoVideo))
 	}
 	if needsDefectPhoto[in.Condition] && counts["defect_photo"] == 0 {
 		return invalid("media", "barang bekas wajib punya foto bagian yang lecet/rusak")
@@ -438,6 +444,9 @@ func (s *Service) UpdateProduct(ctx context.Context, storeID, productID, userID 
 type existingProduct struct {
 	status, moderation, sourceLang, name, desc, category, condition, note string
 	media                                                                 []string
+	approvedMin                                                           *decimal.Decimal
+	cover                                                                 string // storage key foto sampul
+	reported                                                              bool   // ditahan karena laporan pembeli
 }
 
 func (s *Service) saveProduct(ctx context.Context, storeID, productID, userID string, in ProductInput) (Product, error) {
@@ -445,13 +454,21 @@ func (s *Service) saveProduct(ctx context.Context, storeID, productID, userID st
 	if err != nil {
 		return Product{}, err
 	}
-	var allowsUsed bool
-	err = s.pool.QueryRow(ctx, `SELECT allows_used FROM categories WHERE id = $1 AND deleted_at IS NULL`, in.CategoryID).Scan(&allowsUsed)
+	// Wajib sub-kategori (kategori tanpa anak). Bekas/terbatas mengikuti induk.
+	var allowsUsed, restricted, hasChildren bool
+	err = s.pool.QueryRow(ctx, `
+		SELECT c.allows_used AND coalesce(pc.allows_used, true), c.restricted OR coalesce(pc.restricted, false),
+		       EXISTS (SELECT 1 FROM categories k WHERE k.parent_id = c.id AND k.deleted_at IS NULL)
+		FROM categories c LEFT JOIN categories pc ON pc.id = c.parent_id
+		WHERE c.id = $1 AND c.deleted_at IS NULL AND pc.deleted_at IS NULL`, in.CategoryID).Scan(&allowsUsed, &restricted, &hasChildren)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return Product{}, invalid("category_id", "kategori tidak dikenal")
 	}
 	if err != nil {
 		return Product{}, err
+	}
+	if hasChildren {
+		return Product{}, invalid("category_id", "pilih sub-kategori")
 	}
 	if !allowsUsed && in.Condition != "new" {
 		return Product{}, invalid("condition", "kategori ini hanya untuk barang baru")
@@ -480,8 +497,10 @@ func (s *Service) saveProduct(ctx context.Context, storeID, productID, userID st
 	textChanged := old == nil || old.name != in.Name || old.desc != in.Description || old.sourceLang != in.SourceLang
 
 	status, moderation := "draft", "pending_review"
-	var submittedNow bool
+	var submittedNow, publishNow, postReview bool
+	var lane *string
 	flags := map[string]any{}
+	minPrice := minActivePrice(variants)
 	if in.Submit {
 		var storeStatus string
 		if err := s.pool.QueryRow(ctx, `SELECT status::text FROM stores WHERE id = $1`, storeID).Scan(&storeStatus); err != nil {
@@ -497,14 +516,25 @@ func (s *Service) saveProduct(ctx context.Context, storeID, productID, userID st
 		if old != nil && old.status == "archived" {
 			status = "archived"
 		}
-		if old != nil && old.moderation == "approved" && !contentChanged {
-			moderation = "approved" // hanya harga/stok/varian berubah → tidak perlu dicek ulang
-		} else {
-			submittedNow = true
-			flags, err = s.autoFlags(ctx, in)
-			if err != nil {
-				return Product{}, err
+		d, err := s.decideLane(ctx, storeID, old, in, variants, restricted, contentChanged)
+		if err != nil {
+			return Product{}, err
+		}
+		wasApproved := old != nil && old.moderation == "approved"
+		switch {
+		case wasApproved && !contentChanged && len(d.reasons) == 0:
+			moderation = "approved" // hanya harga/stok/varian berubah dan harganya wajar
+		case len(d.reasons) == 0:
+			// 🟢 tayang otomatis. Produk baru / edit besar → masuk daftar "Baru tayang" untuk dicek admin.
+			moderation, submittedNow, flags = "approved", true, d.flags
+			publishNow = !wasApproved || d.major
+			postReview = publishNow
+			if publishNow {
+				lane = ptr("auto")
 			}
+		default:
+			// 🟡 menunggu admin
+			submittedNow, flags, lane = true, d.flags, ptr("manual")
 		}
 	}
 
@@ -513,12 +543,15 @@ func (s *Service) saveProduct(ctx context.Context, storeID, productID, userID st
 		if productID == "" {
 			if err := tx.QueryRow(ctx, `
 				INSERT INTO products (store_id, category_id, source_lang, condition, condition_note, usage_months,
-					warranty_type, warranty_months, return_days, status, moderation_status, submitted_at, auto_flags)
+					warranty_type, warranty_months, return_days, status, moderation_status, submitted_at, auto_flags,
+					published_at, robots_index, review_lane, post_review_pending, approved_min_price)
 				VALUES ($1, $2, $3::lang_code, $4::product_condition, $5, $6, $7, $8, $9, $10::product_status, $11::moderation_status,
-					CASE WHEN $12 THEN now() END, $13)
+					CASE WHEN $12 THEN now() END, $13,
+					CASE WHEN $14 THEN now() END, $11::moderation_status = 'approved', $15, $16, CASE WHEN $14 THEN $17::numeric END)
 				RETURNING id`,
 				storeID, in.CategoryID, in.SourceLang, in.Condition, nilIfEmpty(in.ConditionNote), in.UsageMonths,
-				in.WarrantyType, in.WarrantyMonths, *in.ReturnDays, status, moderation, submittedNow, flagsJSON).Scan(&productID); err != nil {
+				in.WarrantyType, in.WarrantyMonths, *in.ReturnDays, status, moderation, submittedNow, flagsJSON,
+				publishNow, lane, postReview, minPrice).Scan(&productID); err != nil {
 				return err
 			}
 		} else {
@@ -528,10 +561,22 @@ func (s *Service) saveProduct(ctx context.Context, storeID, productID, userID st
 					status = $10::product_status, moderation_status = $11::moderation_status,
 					submitted_at = CASE WHEN $12 THEN now() ELSE submitted_at END,
 					moderation_note = CASE WHEN $12 THEN NULL ELSE moderation_note END,
-					auto_flags = CASE WHEN $12 THEN $13 ELSE auto_flags END
+					auto_flags = CASE WHEN $12 THEN $13 ELSE auto_flags END,
+					published_at = CASE WHEN $14 THEN coalesce(published_at, now()) ELSE published_at END,
+					robots_index = ($11::moderation_status = 'approved'),
+					review_lane = coalesce($15, review_lane),
+					post_review_pending = ($16 OR (post_review_pending AND $11::moderation_status = 'approved')),
+					approved_min_price = CASE WHEN $14 THEN $17::numeric ELSE approved_min_price END
 				WHERE id = $1`,
 				productID, in.CategoryID, in.SourceLang, in.Condition, nilIfEmpty(in.ConditionNote), in.UsageMonths,
-				in.WarrantyType, in.WarrantyMonths, *in.ReturnDays, status, moderation, submittedNow, flagsJSON); err != nil {
+				in.WarrantyType, in.WarrantyMonths, *in.ReturnDays, status, moderation, submittedNow, flagsJSON,
+				publishNow, lane, postReview, minPrice); err != nil {
+				return err
+			}
+		}
+		if publishNow { // keputusan otomatis ikut dicatat di riwayat moderasi (reviewer kosong = sistem)
+			if _, err := tx.Exec(ctx, `INSERT INTO product_moderation_reviews (product_id, decision, auto_flags)
+				VALUES ($1, 'approved', $2)`, productID, flagsJSON); err != nil {
 				return err
 			}
 		}
@@ -595,10 +640,14 @@ func (s *Service) loadExisting(ctx context.Context, storeID, productID string) (
 		SELECT p.status::text, p.moderation_status::text, p.source_lang::text, coalesce(t.name, ''), coalesce(t.description, ''),
 		       p.category_id, p.condition::text, coalesce(p.condition_note, ''),
 		       coalesce((SELECT array_agg(m.storage_key ORDER BY m.sort_order) FROM product_media m
-		                 WHERE m.product_id = p.id AND m.deleted_at IS NULL), '{}')
+		                 WHERE m.product_id = p.id AND m.deleted_at IS NULL), '{}'),
+		       coalesce((SELECT m.storage_key FROM product_media m WHERE m.product_id = p.id AND m.deleted_at IS NULL AND m.kind = 'photo'
+		                 ORDER BY m.sort_order LIMIT 1), ''),
+		       p.approved_min_price, p.moderation_status = 'pending_review' AND coalesce(p.auto_flags->'reasons' ? 'reported', false)
 		FROM products p LEFT JOIN product_translations t ON t.product_id = p.id AND t.lang = p.source_lang
 		WHERE p.id = $1 AND p.store_id = $2 AND p.deleted_at IS NULL`, productID, storeID).
-		Scan(&e.status, &e.moderation, &e.sourceLang, &e.name, &e.desc, &e.category, &e.condition, &e.note, &e.media)
+		Scan(&e.status, &e.moderation, &e.sourceLang, &e.name, &e.desc, &e.category, &e.condition, &e.note, &e.media,
+			&e.cover, &e.approvedMin, &e.reported)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, ErrNotFound
 	}
@@ -856,48 +905,159 @@ func enqueueProductTranslation(ctx context.Context, tx pgx.Tx, productID, source
 	return nil
 }
 
-// autoFlags: cek otomatis sebelum masuk antrean moderator (tidak memblokir; moderator yang memutuskan).
-func (s *Service) autoFlags(ctx context.Context, in ProductInput) (map[string]any, error) {
-	text := strings.ToLower(in.Name + "\n" + in.Description + "\n" + in.ConditionNote)
-	rows, err := s.pool.Query(ctx, `SELECT keyword, category, action FROM prohibited_keywords`)
+// laneDecision: hasil cek otomatis saat produk dikirim.
+type laneDecision struct {
+	reasons []string       // kosong = tayang otomatis
+	major   bool           // produk tayang diubah besar
+	flags   map[string]any // disimpan di products.auto_flags untuk moderator
+}
+
+// decideLane: 🔴 kata "block" → error; selain itu kumpulkan alasan jalur manual (paket modrules).
+func (s *Service) decideLane(ctx context.Context, storeID string, old *existingProduct, in ProductInput, variants []normVariant,
+	restricted, contentChanged bool) (laneDecision, error) {
+	rules, err := modrules.Load(ctx, s.pool)
 	if err != nil {
-		return nil, err
+		return laneDecision{}, err
 	}
-	defer rows.Close()
-	hits := []map[string]string{}
-	for rows.Next() {
-		var kw, cat, action string
-		if err := rows.Scan(&kw, &cat, &action); err != nil {
-			return nil, err
+	blocked, review, err := s.keywordHits(ctx, in)
+	if err != nil {
+		return laneDecision{}, err
+	}
+	if len(blocked) > 0 {
+		return laneDecision{}, invalid("name", fmt.Sprintf("produk dengan kata “%s” tidak boleh dijual di Phsar", blocked[0]["keyword"]))
+	}
+	sit := modrules.Situation{Restricted: restricted, ContentChanged: contentChanged, KeywordReview: len(review) > 0}
+	if old != nil {
+		if old.status != "draft" {
+			sit.PrevModeration = old.moderation
 		}
-		if containsWord(text, strings.ToLower(kw)) {
-			hits = append(hits, map[string]string{"keyword": kw, "category": cat, "action": action})
+		sit.Reported = old.reported
+		sit.MajorEdit = old.moderation == "approved" && isMajorEdit(old, in)
+	}
+	pc := modrules.PriceCheck{Name: in.Name}
+	for _, v := range variants {
+		if v.status != "active" {
+			continue
+		}
+		pc.Prices = append(pc.Prices, v.price)
+		pc.Compares = append(pc.Compares, v.compare)
+	}
+	if old != nil && old.moderation == "approved" {
+		pc.ApprovedMin = old.approvedMin
+	}
+	floors, err := s.priceFloors(ctx)
+	if err != nil {
+		return laneDecision{}, err
+	}
+	sit.PriceHits = modrules.CheckPrice(pc, floors, rules)
+	// Fakta toko hanya dibutuhkan kalau jalur penuh dievaluasi.
+	if sit.PrevModeration != "approved" || sit.MajorEdit {
+		if err := s.pool.QueryRow(ctx, `
+			SELECT (SELECT count(DISTINCT r.product_id) FROM product_moderation_reviews r JOIN products p ON p.id = r.product_id
+			        WHERE p.store_id = $1 AND r.decision = 'approved' AND r.reviewer_id IS NOT NULL) < $2,
+			       (SELECT coalesce(sum(points), 0) FROM store_strikes WHERE store_id = $1 AND revoked_at IS NULL AND expires_at > now())`,
+			storeID, rules.Probation).Scan(&sit.ProbationLeft, &sit.StrikePoints); err != nil {
+			return laneDecision{}, err
 		}
 	}
-	flags := map[string]any{}
-	if len(hits) > 0 {
-		flags["keywords"] = hits
+	reasons := modrules.Decide(sit, rules)
+	if reasons == nil {
+		reasons = []string{}
+	}
+	flags := map[string]any{"reasons": reasons, "lane": "auto"}
+	if len(reasons) > 0 {
+		flags["lane"] = "manual"
+	}
+	if len(review) > 0 {
+		flags["keywords"] = review
+	}
+	if len(sit.PriceHits) > 0 {
+		flags["price"] = sit.PriceHits
 	}
 	if in.Condition != "new" {
 		flags["used_item"] = true
 	}
-	return flags, rows.Err()
+	return laneDecision{reasons: reasons, major: sit.MajorEdit, flags: flags}, nil
 }
 
-// containsWord: untuk kata latin dicek batas kata ("gun" tidak cocok dengan "burgundy").
-func containsWord(text, kw string) bool {
-	latin := true
-	for _, r := range kw {
-		if r > 127 {
-			latin = false
+// isMajorEdit: perubahan yang membuat produk tayang dicek ulang penuh — nama, kategori, kondisi, atau foto sampul.
+func isMajorEdit(old *existingProduct, in ProductInput) bool {
+	if !strings.EqualFold(strings.Join(strings.Fields(old.name), " "), strings.Join(strings.Fields(in.Name), " ")) ||
+		old.category != in.CategoryID || old.condition != in.Condition {
+		return true
+	}
+	return old.cover != coverKey(in.Media)
+}
+
+// coverKey: foto pertama (sampul).
+func coverKey(media []MediaInput) string {
+	for _, m := range media {
+		if m.Kind == "photo" {
+			return m.Key
 		}
 	}
-	if !latin {
-		return strings.Contains(text, kw)
-	}
-	re, err := regexp.Compile(`(^|[^a-z0-9])` + regexp.QuoteMeta(kw) + `($|[^a-z0-9])`)
-	return err == nil && re.MatchString(text)
+	return ""
 }
+
+// keywordHits: kata terlarang di nama, deskripsi & catatan kondisi — dipisah per aksi.
+func (s *Service) keywordHits(ctx context.Context, in ProductInput) (blocked, review []map[string]string, err error) {
+	text := strings.ToLower(in.Name + "\n" + in.Description + "\n" + in.ConditionNote)
+	rows, err := s.pool.Query(ctx, `SELECT keyword, category, action FROM prohibited_keywords ORDER BY action, keyword`)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var kw, cat, action string
+		if err := rows.Scan(&kw, &cat, &action); err != nil {
+			return nil, nil, err
+		}
+		if modrules.ContainsWord(text, strings.ToLower(kw)) {
+			hit := map[string]string{"keyword": kw, "category": cat, "action": action}
+			if action == "block" {
+				blocked = append(blocked, hit)
+			} else {
+				review = append(review, hit)
+			}
+		}
+	}
+	return blocked, review, rows.Err()
+}
+
+func (s *Service) priceFloors(ctx context.Context) ([]modrules.Floor, error) {
+	rows, err := s.pool.Query(ctx, `SELECT keyword, min_price FROM price_floor_rules`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []modrules.Floor
+	for rows.Next() {
+		var f modrules.Floor
+		if err := rows.Scan(&f.Keyword, &f.MinPrice); err != nil {
+			return nil, err
+		}
+		out = append(out, f)
+	}
+	return out, rows.Err()
+}
+
+// minActivePrice: harga termurah varian aktif (nil kalau tidak ada) — teks untuk parameter numeric.
+func minActivePrice(variants []normVariant) *string {
+	var min *decimal.Decimal
+	for i := range variants {
+		v := &variants[i]
+		if v.status == "active" && (min == nil || v.price.LessThan(*min)) {
+			min = &v.price
+		}
+	}
+	if min == nil {
+		return nil
+	}
+	str := min.StringFixed(2)
+	return &str
+}
+
+func ptr[T any](v T) *T { return &v }
 
 // ---- Baca ---------------------------------------------------------------------
 
@@ -912,7 +1072,8 @@ func (s *Service) GetProduct(ctx context.Context, storeID, productID string) (Pr
 	err := s.pool.QueryRow(ctx, `
 		SELECT p.id, p.store_id, p.category_id, p.source_lang::text, p.condition::text, coalesce(p.condition_note, ''), p.usage_months,
 		       p.warranty_type, p.warranty_months, p.return_days, p.status::text, p.moderation_status::text, p.moderation_note,
-		       p.min_price::text, p.max_price::text, p.auto_flags, p.submitted_at, p.published_at, p.created_at, p.updated_at,
+		       p.min_price::text, p.max_price::text, p.auto_flags, p.review_lane, p.post_review_pending,
+		       p.submitted_at, p.published_at, p.created_at, p.updated_at,
 		       st.status = 'active',
 		       EXISTS (SELECT 1 FROM translation_jobs j WHERE j.entity_table = 'product_translations' AND j.entity_id = p.id::text
 		               AND j.status IN ('queued','running'))
@@ -920,7 +1081,7 @@ func (s *Service) GetProduct(ctx context.Context, storeID, productID string) (Pr
 		WHERE p.id = $1 AND ($2 = '' OR p.store_id::text = $2) AND p.deleted_at IS NULL`, productID, storeID).
 		Scan(&p.ID, &p.StoreID, &p.CategoryID, &p.SourceLang, &p.Condition, &p.ConditionNote, &usage,
 			&p.WarrantyType, &warranty, &ret, &p.Status, &p.ModerationStatus, &note,
-			&p.MinPrice, &p.MaxPrice, &flags, &p.SubmittedAt, &p.PublishedAt, &p.CreatedAt, &p.UpdatedAt, &storeActive, &p.TranslationPending)
+			&p.MinPrice, &p.MaxPrice, &flags, &p.ReviewLane, &p.PostReview, &p.SubmittedAt, &p.PublishedAt, &p.CreatedAt, &p.UpdatedAt, &storeActive, &p.TranslationPending)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return p, ErrNotFound
 	}
@@ -954,7 +1115,11 @@ func (s *Service) GetProduct(ctx context.Context, storeID, productID string) (Pr
 			p.TranslationError = truncate(jobErr, 240)
 		}
 	}
-	if !s.TranslationOn && (p.TranslationState == "pending" || p.TranslationState == "retrying") {
+	on := s.TranslationOn
+	if s.TranslationReady != nil {
+		on = s.TranslationReady(ctx)
+	}
+	if !on && (p.TranslationState == "pending" || p.TranslationState == "retrying") {
 		p.TranslationState = "off"
 	}
 
@@ -1078,18 +1243,61 @@ func sortVariants(p Product) {
 	})
 }
 
-// ListProducts: filter = all · draft · pending · live · changes · archived.
-func (s *Service) ListProducts(ctx context.Context, storeID, filter string) ([]ProductSummary, error) {
-	where := map[string]string{
-		"all":      "true",
-		"draft":    "p.status = 'draft'",
-		"pending":  "p.status <> 'draft' AND p.moderation_status = 'pending_review'",
-		"live":     "p.status = 'active' AND p.moderation_status = 'approved'",
-		"changes":  "p.status <> 'draft' AND p.moderation_status IN ('changes_requested','rejected')",
-		"archived": "p.status IN ('archived','banned')",
-	}[filter]
-	if where == "" {
+// productFilters: tab daftar produk seller.
+var productFilters = map[string]string{
+	"all":      "true",
+	"draft":    "p.status = 'draft'",
+	"pending":  "p.status <> 'draft' AND p.moderation_status = 'pending_review'",
+	"live":     "p.status = 'active' AND p.moderation_status = 'approved'",
+	"changes":  "p.status <> 'draft' AND p.moderation_status IN ('changes_requested','rejected')",
+	"archived": "p.status IN ('archived','banned')",
+}
+
+var productFilterOrder = []string{"all", "draft", "pending", "live", "changes", "archived"}
+
+var productSorts = map[string]string{
+	"updated":    "p.updated_at DESC, p.id",
+	"name":       "lower(coalesce(t.name, '')), p.id",
+	"price_asc":  "p.min_price ASC NULLS LAST, p.id",
+	"price_desc": "p.max_price DESC NULLS LAST, p.id",
+	"stock_low":  "total_stock ASC, p.updated_at DESC, p.id",
+}
+
+// ProductQuery: filter (tab), q (nama di bahasa apa pun / SKU), sort, halaman.
+type ProductQuery struct {
+	Filter, Sort string
+	Page         paging.Params
+}
+
+type ProductList struct {
+	Products []ProductSummary `json:"products"`
+	Counts   map[string]int   `json:"counts,omitempty"` // jumlah per tab (ikut kata kunci)
+	Page     *paging.Meta     `json:"page,omitempty"`
+}
+
+// productSearch: kondisi kata kunci ($2 = pola ILIKE).
+const productSearch = `(EXISTS (SELECT 1 FROM product_translations x WHERE x.product_id = p.id AND x.name ILIKE $2)
+	OR EXISTS (SELECT 1 FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.sku ILIKE $2))`
+
+// ListProducts: daftar produk toko. Tanpa q.Page.On: perilaku lama (maks. 500, tanpa jumlah per tab).
+func (s *Service) ListProducts(ctx context.Context, storeID string, q ProductQuery) (*ProductList, error) {
+	where, ok := productFilters[q.Filter]
+	if !ok {
 		where = "true"
+	}
+	order, ok := productSorts[q.Sort]
+	if !ok {
+		order = productSorts["updated"]
+	}
+	base := `p.store_id = $1 AND p.deleted_at IS NULL`
+	args := []any{storeID}
+	if q.Page.Q != "" {
+		base += ` AND ` + productSearch
+		args = append(args, paging.Like(q.Page.Q))
+	}
+	limit, offset := 500, 0
+	if q.Page.On {
+		limit, offset = q.Page.Size, q.Page.Offset()
 	}
 	rows, err := s.pool.Query(ctx, `
 		SELECT p.id, coalesce(t.name, ''), p.category_id, p.condition::text, p.status::text, p.moderation_status::text,
@@ -1098,17 +1306,17 @@ func (s *Service) ListProducts(ctx context.Context, storeID, filter string) ([]P
 		                 ORDER BY m.sort_order LIMIT 1), ''),
 		       EXISTS (SELECT 1 FROM product_media m WHERE m.product_id = p.id AND m.deleted_at IS NULL AND m.kind = 'video'),
 		       p.min_price::text, p.max_price::text,
-		       coalesce((SELECT sum(stock_qty) FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.status = 'active'), 0),
+		       coalesce((SELECT sum(stock_qty) FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL AND v.status = 'active'), 0) AS total_stock,
 		       (SELECT count(*) FROM product_variants v WHERE v.product_id = p.id AND v.deleted_at IS NULL),
 		       p.updated_at
 		FROM products p LEFT JOIN product_translations t ON t.product_id = p.id AND t.lang = p.source_lang
-		WHERE p.store_id = $1 AND p.deleted_at IS NULL AND `+where+`
-		ORDER BY p.updated_at DESC LIMIT 500`, storeID)
+		WHERE `+base+` AND `+where+`
+		ORDER BY `+order+` LIMIT `+fmt.Sprint(limit)+` OFFSET `+fmt.Sprint(offset), args...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	out := []ProductSummary{}
+	out := &ProductList{Products: []ProductSummary{}}
 	for rows.Next() {
 		var p ProductSummary
 		var cover string
@@ -1120,9 +1328,39 @@ func (s *Service) ListProducts(ctx context.Context, storeID, filter string) ([]P
 		if !strings.HasPrefix(cover, "http") {
 			p.CoverURL = s.files.PublicURL(cover)
 		}
-		out = append(out, p)
+		out.Products = append(out.Products, p)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	if !q.Page.On {
+		return out, nil
+	}
+	// Jumlah per tab dalam satu query (ikut kata kunci, supaya seller tahu di tab mana hasilnya).
+	cols := make([]string, len(productFilterOrder))
+	for i, f := range productFilterOrder {
+		cols[i] = `count(*) FILTER (WHERE ` + productFilters[f] + `)`
+	}
+	vals := make([]int, len(productFilterOrder))
+	ptrs := make([]any, len(vals))
+	for i := range vals {
+		ptrs[i] = &vals[i]
+	}
+	if err := s.pool.QueryRow(ctx, `SELECT `+strings.Join(cols, ", ")+` FROM products p WHERE `+base, args...).Scan(ptrs...); err != nil {
+		return nil, err
+	}
+	out.Counts = map[string]int{}
+	for i, f := range productFilterOrder {
+		out.Counts[f] = vals[i]
+	}
+	filter := q.Filter
+	if _, ok := productFilters[filter]; !ok {
+		filter = "all"
+	}
+	m := paging.NewMeta(q.Page, out.Counts[filter])
+	out.Page = &m
+	return out, nil
 }
 
 // ---- Ubah cepat ---------------------------------------------------------------

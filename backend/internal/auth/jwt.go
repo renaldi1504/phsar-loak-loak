@@ -24,6 +24,8 @@ type Claims struct {
 	SessionID string `json:"sid"`
 	IssuedAt  int64  `json:"iat"`
 	ExpiresAt int64  `json:"exp"`
+	MFA       bool   `json:"mfa,omitempty"` // sesi admin yang sudah lolos MFA
+	Guest     bool   `json:"gst,omitempty"` // akun tamu (checkout tanpa login)
 }
 
 var jwtHeader = base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"HS256","typ":"JWT"}`))

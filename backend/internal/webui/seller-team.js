@@ -1,8 +1,7 @@
 'use strict';
-// Seller Center: lonceng notifikasi, banner, tim (staf) + halaman undangan.
+// Seller Center: banner, tim (staf) + halaman undangan.
 addStrings({
-  en: {notifications: 'Notifications', noNotifications: 'No notifications yet.', markAllRead: 'Mark all as read', tgHint: 'Sign in with Telegram to also get these in Telegram.',
-    tabTeam: 'Team', staffNote: 'You are staff in this store: you can add and edit products. Store settings are managed by the owner.',
+  en: {tabTeam: 'Team', staffNote: 'You are staff in this store: you can handle orders and edit products. Store settings are managed by the owner.',
     teamIntro: 'Staff can add and edit products. Only you (the owner) can change the store profile, identity, pickup points and team.',
     owner: 'Owner', staff: 'Staff', remove: 'Remove', confirmRemove: 'Remove {name} from this store?', inviteStaff: 'Invite staff',
     inviteHint: 'Create a link and send it to your staff (e.g. in Telegram). It works once and expires in 7 days.', createLink: 'Create invite link',
@@ -13,8 +12,7 @@ addStrings({
     uploadBanner: 'Upload banner', changeBanner: 'Change banner', bannerHint: 'Store banner — shown at the top of your shop page', bannerSize: 'Wide photo, e.g. 1600 × 600',
     err_invite_invalid: 'This invite link is no longer valid.', err_too_many_staff: 'A store can have up to 10 staff.', err_owner_only: 'Only the store owner can do this.',
     stockPrice: 'Stock & price', saveChanges: 'Save', stockSaved: 'Stock & price updated', quickHint: 'Changes go live right away — no review needed.'},
-  km: {notifications: 'ការជូនដំណឹង', noNotifications: 'មិនទាន់មានការជូនដំណឹងទេ។', markAllRead: 'សម្គាល់ថាបានអានទាំងអស់', tgHint: 'ចូលតាម Telegram ដើម្បីទទួលការជូនដំណឹងក្នុង Telegram ផងដែរ។',
-    tabTeam: 'ក្រុមការងារ', staffNote: 'អ្នកជាបុគ្គលិកនៃហាងនេះ៖ អាចបន្ថែម និងកែផលិតផល។ ការកំណត់ហាងគ្រប់គ្រងដោយម្ចាស់ហាង។',
+  km: {tabTeam: 'ក្រុមការងារ', staffNote: 'អ្នកជាបុគ្គលិកនៃហាងនេះ៖ អាចគ្រប់គ្រងការបញ្ជាទិញ និងកែផលិតផល។ ការកំណត់ហាងគ្រប់គ្រងដោយម្ចាស់ហាង។',
     teamIntro: 'បុគ្គលិកអាចបន្ថែម និងកែផលិតផល។ មានតែអ្នក (ម្ចាស់) ដែលអាចកែព័ត៌មានហាង អត្តសញ្ញាណ ទីតាំងទទួល និងក្រុមការងារ។',
     owner: 'ម្ចាស់', staff: 'បុគ្គលិក', remove: 'ដកចេញ', confirmRemove: 'ដក {name} ចេញពីហាងនេះ?', inviteStaff: 'អញ្ជើញបុគ្គលិក',
     inviteHint: 'បង្កើតតំណ ហើយផ្ញើទៅបុគ្គលិក (ឧ. តាម Telegram)។ ប្រើបានតែម្តង និងផុតកំណត់ក្នុង 7 ថ្ងៃ។', createLink: 'បង្កើតតំណអញ្ជើញ',
@@ -25,8 +23,7 @@ addStrings({
     uploadBanner: 'ផ្ទុកបដា', changeBanner: 'ប្តូរបដា', bannerHint: 'បដាហាង — បង្ហាញនៅខាងលើទំព័រហាង', bannerSize: 'រូបថតទទឹង ឧ. 1600 × 600',
     err_invite_invalid: 'តំណអញ្ជើញនេះលែងប្រើបានហើយ។', err_too_many_staff: 'ហាងមួយមានបុគ្គលិកបានច្រើនបំផុត 10 នាក់។', err_owner_only: 'មានតែម្ចាស់ហាងប៉ុណ្ណោះដែលអាចធ្វើបាន។',
     stockPrice: 'ស្តុក និងតម្លៃ', saveChanges: 'រក្សាទុក', stockSaved: 'បានកែស្តុក និងតម្លៃ', quickHint: 'ការកែប្រែមានប្រសិទ្ធភាពភ្លាម — មិនចាំបាច់ពិនិត្យ។'},
-  zh: {notifications: '通知', noNotifications: '暂无通知。', markAllRead: '全部标为已读', tgHint: '使用 Telegram 登录即可在 Telegram 中收到这些通知。',
-    tabTeam: '团队', staffNote: '你是这家店的店员：可以添加和编辑商品。店铺设置由店主管理。',
+  zh: {tabTeam: '团队', staffNote: '你是这家店的店员：可以处理订单和编辑商品。店铺设置由店主管理。',
     teamIntro: '店员可以添加和编辑商品。只有你（店主）可以修改店铺资料、身份验证、取件点和团队。',
     owner: '店主', staff: '店员', remove: '移除', confirmRemove: '把 {name} 从店铺移除？', inviteStaff: '邀请店员',
     inviteHint: '生成链接并发给店员（例如通过 Telegram）。链接只能使用一次，7 天后失效。', createLink: '生成邀请链接',
@@ -39,69 +36,30 @@ addStrings({
     stockPrice: '库存和价格', saveChanges: '保存', stockSaved: '库存和价格已更新', quickHint: '修改立即生效，无需审核。'},
 });
 
-// ---- Lonceng notifikasi ----
-const NB = {open: false, data: null};
-function bellButton() {
-  return `<div class="bellwrap"><button type="button" class="bell" id="bellBtn" aria-label="${t('notifications')}" aria-expanded="${NB.open}" onclick="toggleBell()">
-    <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 22a2.5 2.5 0 0 0 2.4-2h-4.8A2.5 2.5 0 0 0 12 22Zm7-6V11a7 7 0 0 0-5.5-6.8V3a1.5 1.5 0 0 0-3 0v1.2A7 7 0 0 0 5 11v5l-2 2v1h18v-1z"/></svg>
-    <span class="badge hidden" id="bellCount"></span></button><div class="bellpanel hidden" id="bellPanel" role="dialog" aria-label="${t('notifications')}"></div></div>`;
-}
-async function loadBell() {
-  if (!P.token || !$('#bellBtn')) return;
-  try { NB.data = await api('/v1/seller/notifications?limit=30'); } catch { return; }
-  const c = $('#bellCount');
-  if (c) { c.textContent = NB.data.unread > 9 ? '9+' : NB.data.unread; c.classList.toggle('hidden', !NB.data.unread); }
-  if (NB.open) drawBell();
-}
-function drawBell() {
-  const panel = $('#bellPanel');
-  if (!panel || !NB.data) return;
-  panel.classList.toggle('hidden', !NB.open);
-  const list = NB.data.notifications;
-  panel.innerHTML = `<div class="spread"><b>${t('notifications')}</b>${NB.data.unread ? `<button type="button" class="linkbtn" onclick="readAll()">${t('markAllRead')}</button>` : ''}</div>
-    ${list.length ? list.map(n => `<a class="notif ${n.read ? '' : 'unread'}" href="${esc(n.link || '#/')}" onclick="readOne(${n.id})">
-      <b>${esc(n.title)}</b>${n.body ? `<span>${esc(n.body)}</span>` : ''}<small class="muted">${new Date(n.created_at).toLocaleString()}</small></a>`).join('')
-      : `<p class="muted">${t('noNotifications')}</p>`}
-    <p class="muted" style="font-size:12px">${t('tgHint')}</p>`;
-}
-function toggleBell() {
-  NB.open = !NB.open;
-  $('#bellBtn')?.setAttribute('aria-expanded', NB.open);
-  if (NB.data) drawBell(); else $('#bellPanel')?.classList.toggle('hidden', !NB.open);
-  loadBell();
-}
-async function readOne(id) {
-  NB.open = false;
-  try { await api('/v1/seller/notifications/read', {method: 'POST', body: {ids: [id]}}); } catch {}
-  loadBell();
-}
-async function readAll() {
-  try { await api('/v1/seller/notifications/read', {method: 'POST', body: {all: true}}); } catch {}
-  loadBell();
-}
-document.addEventListener('click', e => {
-  if (NB.open && !e.target.closest('.bellwrap')) { NB.open = false; $('#bellPanel')?.classList.add('hidden'); }
-});
-setInterval(() => { if (document.visibilityState === 'visible') loadBell(); }, 60000);
+// Lonceng notifikasi: lihat notify.js (dipakai bersama admin).
 
 // ---- Tab tim (owner) ----
 const TM = {lastLink: null};
 const inviteURL = token => `${location.origin}/seller/#/invite/${token}`;
 async function tabTeam(id) {
   const team = await api(`/v1/seller/stores/${id}/team`);
-  $('#tab').innerHTML = `<p class="muted">${t('teamIntro')}</p>
+  // sellerpages: daftar orang di toko + undang staf dengan langkah 1-2-3.
+  $('#tab').innerHTML = `<p class="ohelp">👥 ${t('teamIntro')}</p>
+    <h2 class="sp-sub">${t('spTmPeople')}</h2>
     <section class="card">
       ${team.members.map(m => { const title = m.name || m.telegram || m.phone || '—'; const sub = [m.phone, m.telegram].filter(x => x && x !== title).join(' · ');
-        return `<div class="spread member"><div><b>${esc(title)}</b>${sub ? `<span class="muted">${esc(sub)}</span>` : ''}</div>
-        <div class="row"><span class="chip ${m.role === 'owner' ? 'pink' : ''}">${t(m.role)}</span>
-          ${m.role === 'staff' ? `<button type="button" class="danger" onclick="removeMember('${id}','${m.user_id}','${esc(m.name || m.phone)}')">${t('remove')}</button>` : ''}</div></div>`; }).join('')}
+        return `<div class="sp-mem member"><span class="av" aria-hidden="true">${esc(title.replace(/^[+@]/, '').slice(0, 1).toUpperCase())}</span><div class="mx"><b>${esc(title)}</b>${sub ? `<span>${esc(sub)}</span>` : ''}</div>
+          <span class="chip ${m.role === 'owner' ? 'pink' : ''}">${t(m.role)}</span>
+          ${m.role === 'staff' ? `<button type="button" class="textbtn danger" style="color:var(--bad)" onclick="removeMember('${id}','${m.user_id}','${esc(m.name || m.phone)}')">${t('remove')}</button>` : ''}</div>`; }).join('')}
     </section>
-    <section class="card"><h2>${t('inviteStaff')}</h2><p class="muted">${t('inviteHint')}</p>
+    <h2 class="sp-sub">${t('inviteStaff')}</h2>
+    ${spSteps([[t('spTm1'), t('spTm1W')], [t('spTm2'), t('spTm2W')], [t('spTm3'), t('spTm3W')]], TM.lastLink ? 1 : 0)}
+    <section class="card"><p class="muted" style="margin:0">${t('inviteHint')}</p>
       ${TM.lastLink ? `<div class="banner ok"><b>${t('linkOnce')}</b><div class="row" style="margin-top:8px">
-        <input id="inviteLink" readonly value="${esc(TM.lastLink)}" style="flex:1;min-width:220px"><button type="button" onclick="copyInvite()">${t('copy')}</button></div></div>` : ''}
-      <div><button type="button" class="primary" id="newInvite">${t('createLink')}</button></div>
+        <input id="inviteLink" readonly value="${esc(TM.lastLink)}" style="flex:1;min-width:0"><button type="button" class="primary" onclick="copyInvite()">${t('copy')}</button></div></div>` : ''}
+      <div><button type="button" class="${TM.lastLink ? '' : 'primary'} sp-block" id="newInvite">${t('createLink')}</button></div>
       ${team.invites.length ? `<b>${t('openInvites')}</b>${team.invites.map(i => `<div class="spread"><span class="muted">${t('expires', {d: new Date(i.expires_at).toLocaleDateString()})}</span>
-        <button type="button" onclick="revokeInvite('${id}','${i.id}')">${t('cancelLink')}</button></div>`).join('')}` : ''}
+        <button type="button" class="textbtn" onclick="revokeInvite('${id}','${i.id}')">${t('cancelLink')}</button></div>`).join('')}` : ''}
     </section>`;
   $('#newInvite').onclick = async () => {
     try { const inv = await api(`/v1/seller/stores/${id}/invites`, {method: 'POST'}); TM.lastLink = inviteURL(inv.token); render(); }
@@ -114,11 +72,11 @@ async function copyInvite() {
   toast(t('copied'));
 }
 async function revokeInvite(sid, iid) {
-  try { await api(`/v1/seller/stores/${sid}/invites/${iid}`, {method: 'DELETE'}); TM.lastLink = null; render(); } catch (e) { toast(errMsg(e)); }
+  try { await api(`/v1/seller/stores/${sid}/invites/${iid}`, {method: 'DELETE'}); TM.lastLink = null; render(); } catch (e) { toast(errMsg(e), 'error'); }
 }
 async function removeMember(sid, uid, name) {
   if (!confirm(t('confirmRemove', {name}))) return;
-  try { await api(`/v1/seller/stores/${sid}/members/${uid}`, {method: 'DELETE'}); render(); } catch (e) { toast(errMsg(e)); }
+  try { await api(`/v1/seller/stores/${sid}/members/${uid}`, {method: 'DELETE'}); render(); } catch (e) { toast(errMsg(e), 'error'); }
 }
 window.addEventListener('hashchange', () => { TM.lastLink = null; });
 
@@ -146,7 +104,7 @@ async function renderInvite(token) {
 // ---- Edit stok & harga cepat (dari daftar produk) ----
 async function openStockDialog(sid, pid) {
   let p;
-  try { p = await api(`/v1/seller/stores/${sid}/products/${pid}`); } catch (e) { toast(errMsg(e)); return; }
+  try { p = await api(`/v1/seller/stores/${sid}/products/${pid}`); } catch (e) { toast(errMsg(e), 'error'); return; }
   const dlg = document.createElement('dialog');
   dlg.className = 'stockdlg';
   dlg.innerHTML = `<form method="dialog"><div class="spread"><h2>${t('stockPrice')}</h2><button value="cancel" aria-label="${t('cancel')}">✕</button></div>

@@ -91,10 +91,10 @@ func newActiveStore(t *testing.T, e *env) (token, storeID string) {
 	return
 }
 
+// newAdmin: user baru → peran admin → login di /admin (HP) → pasang MFA. Mengembalikan access token admin yang lolos MFA.
 func newAdmin(t *testing.T, e *env, role string) string {
 	t.Helper()
-	tok, phone := e.login(t)
-	e.sql(t, `INSERT INTO admin_users (user_id, role_code) SELECT id, $2 FROM users WHERE phone = '+855' || substr($1, 2)`, phone, role)
+	tok, _ := newAdminFull(t, e, role)
 	return tok
 }
 
@@ -170,8 +170,8 @@ func TestStoreOnboardingAndVerification(t *testing.T) {
 	})
 
 	admin := newAdmin(t, e, "moderator")
-	t.Run("bukan admin ditolak", func(t *testing.T) {
-		e.call(t, "GET", "/admin/api/stores", nil, tok).wantErr(403, "not_admin")
+	t.Run("bukan admin ditolak (token app tidak berlaku di API admin)", func(t *testing.T) {
+		e.call(t, "GET", "/admin/api/stores", nil, tok).wantErr(401, "token_invalid")
 	})
 	t.Run("peran tanpa izin ditolak", func(t *testing.T) {
 		fin := newAdmin(t, e, "cs")
@@ -182,7 +182,7 @@ func TestStoreOnboardingAndVerification(t *testing.T) {
 	d := e.call(t, "GET", "/admin/api/stores/"+id, nil, admin).want(200)
 	t.Run("admin bisa membuka dokumen KYC (dan tercatat di audit log)", func(t *testing.T) {
 		e.call(t, "GET", d.str("id_document_url"), nil, admin).want(200)
-		e.call(t, "GET", d.str("id_document_url"), nil, tok).want(403)
+		e.call(t, "GET", d.str("id_document_url"), nil, tok).want(401)
 		check(t, e.scalar(t, `SELECT count(*) FROM audit_logs WHERE action = 'kyc_document.view'`) != "0", "akses KYC tidak tercatat")
 	})
 	t.Run("toko belum bisa disetujui sebelum KYC & titik diverifikasi", func(t *testing.T) {
@@ -240,7 +240,7 @@ func TestProducts(t *testing.T) {
 
 	product := func(over map[string]any) map[string]any {
 		p := map[string]any{
-			"category_id": "fashion", "source_lang": "en", "name": "Cotton T-shirt basic", "description": "Soft cotton tee.",
+			"category_id": "womens-tops", "source_lang": "en", "name": "Cotton T-shirt basic", "description": "Soft cotton tee.",
 			"condition": "new",
 			"options": []any{
 				map[string]any{"kind": "color", "name": "Color", "values": []any{map[string]any{"value": "Red", "swatch_hex": "#ff0000"}, map[string]any{"value": "Black"}}},
@@ -269,7 +269,7 @@ func TestProducts(t *testing.T) {
 			{"kategori kosong", "category_id", map[string]any{"category_id": ""}},
 			{"kategori tidak dikenal", "category_id", map[string]any{"category_id": "weapons"}},
 			{"barang bekas tanpa catatan", "condition_note", map[string]any{"condition": "used_good"}},
-			{"kosmetik bekas", "condition", map[string]any{"category_id": "beauty", "condition": "used_good", "condition_note": "x"}},
+			{"kosmetik bekas", "condition", map[string]any{"category_id": "skincare", "condition": "used_good", "condition_note": "x"}},
 			{"nilai varian tidak ada di opsi", "variants[0].options", map[string]any{"variants": []any{map[string]any{"options": []string{"Blue", "M"}, "price": "5", "stock_qty": 1}}}},
 			{"harga nol", "variants[0].price", map[string]any{"variants": []any{map[string]any{"options": []string{"Red", "M"}, "price": "0", "stock_qty": 1}}}},
 			{"harga coret lebih rendah", "variants[0].compare_at_price", map[string]any{"variants": []any{map[string]any{"options": []string{"Red", "M"}, "price": "5", "compare_at_price": "4", "stock_qty": 1}}}},
@@ -427,7 +427,7 @@ func TestProducts(t *testing.T) {
 func TestWebAndPublic(t *testing.T) {
 	e := getEnv(t)
 	for _, p := range []string{"/healthz", "/readyz", "/v1/app/meta", "/seller/", "/admin/", "/dev/login",
-		"/ui/common.js", "/ui/common.css", "/ui/maps.js", "/ui/seller.js", "/ui/seller-products.js", "/ui/admin.js", "/ui/admin-products.js", "/ui/seller-team.js"} {
+		"/ui/common.js", "/ui/common.css", "/ui/maps.js", "/ui/seller.js", "/ui/seller-products.js", "/ui/admin.js", "/ui/admin-products.js", "/ui/seller-team.js", "/ui/seller-orders.js", "/ui/admin-refunds.js", "/ui/courier.js", "/ui/admin-delivery.js", "/ui/seller-payouts.js", "/ui/admin-payouts.js"} {
 		t.Run(p, func(t *testing.T) { e.call(t, "GET", p, nil, "").want(200) })
 	}
 	t.Run("config.js berisi kunci Google Maps", func(t *testing.T) {
@@ -474,7 +474,7 @@ func TestTranslationFailureAndRetry(t *testing.T) {
 	base := "/v1/seller/stores/" + sid + "/products"
 	v := e.upload(t, tok, "product_media", mp4Bytes).want(201)
 	f := e.upload(t, tok, "product_media", jpegBytes).want(201)
-	p := e.call(t, "POST", base, map[string]any{"category_id": "kitchen", "source_lang": "en", "name": "Rice cooker 1.8L", "description": "Non-stick pot",
+	p := e.call(t, "POST", base, map[string]any{"category_id": "kitchenware", "source_lang": "en", "name": "Rice cooker 1.8L", "description": "Non-stick pot",
 		"condition": "new", "variants": []any{map[string]any{"options": []string{}, "price": "25", "stock_qty": 3}},
 		"media": []any{map[string]any{"key": v.str("key"), "kind": "video"}, map[string]any{"key": f.str("key"), "kind": "photo"}}}, tok).want(201)
 	pid := p.str("id")
@@ -565,8 +565,17 @@ func TestNotifications(t *testing.T) {
 			SELECT id, 'telegram', '777000111', '@notifshop' FROM users WHERE phone = '+855' || substr($1, 2)`, phone)
 		bot := &fakeTelegram{}
 		w := &notify.Worker{Pool: e.pool, Bot: bot, BaseURL: "https://phsar.test", Log: e.worker.Log}
-		n, err := w.RunOnce(context.Background())
-		check(t, err == nil && n >= 2, "worker: n=%d err=%v", n, err)
+		// Kirim semua yang antre (tes lain juga membuat notifikasi).
+		total := 0
+		for i := 0; i < 50; i++ {
+			n, err := w.RunOnce(context.Background())
+			check(t, err == nil, "worker: %v", err)
+			if n == 0 {
+				break
+			}
+			total += n
+		}
+		check(t, total >= 2, "worker: n=%d", total)
 		joined := strings.Join(bot.sent, "\n")
 		check(t, strings.Contains(joined, "777000111|") && strings.Contains(joined, "Notif Shop") && strings.Contains(joined, "https://phsar.test/seller/#/store/"+sid),
 			"pesan Telegram salah: %s", joined)
@@ -610,7 +619,7 @@ func newProductForModeration(t *testing.T, e *env, tok, sid string) string {
 	t.Helper()
 	v := e.upload(t, tok, "product_media", mp4Bytes).want(201)
 	f := e.upload(t, tok, "product_media", jpegBytes).want(201)
-	return e.call(t, "POST", "/v1/seller/stores/"+sid+"/products", map[string]any{"category_id": "kitchen", "source_lang": "en", "name": "Thermos 1L",
+	return e.call(t, "POST", "/v1/seller/stores/"+sid+"/products", map[string]any{"category_id": "kitchenware", "source_lang": "en", "name": "Thermos 1L",
 		"condition": "new", "variants": []any{map[string]any{"options": []string{}, "price": "9", "stock_qty": 5}}, "submit": true,
 		"media": []any{map[string]any{"key": v.str("key"), "kind": "video"}, map[string]any{"key": f.str("key"), "kind": "photo"}}}, tok).want(201).str("id")
 }
@@ -645,7 +654,7 @@ func TestTeam(t *testing.T) {
 		e.call(t, "GET", "/v1/seller/stores/"+sid+"/products", nil, staff).want(200)
 		v := e.upload(t, staff, "product_media", mp4Bytes).want(201)
 		f := e.upload(t, staff, "product_media", jpegBytes).want(201)
-		e.call(t, "POST", "/v1/seller/stores/"+sid+"/products", map[string]any{"category_id": "kitchen", "source_lang": "km", "name": "ឆ្នាំងបាយ",
+		e.call(t, "POST", "/v1/seller/stores/"+sid+"/products", map[string]any{"category_id": "kitchenware", "source_lang": "km", "name": "ឆ្នាំងបាយ",
 			"condition": "new", "variants": []any{map[string]any{"options": []string{}, "price": "20", "stock_qty": 2}},
 			"media": []any{map[string]any{"key": v.str("key"), "kind": "video"}, map[string]any{"key": f.str("key"), "kind": "photo"}}}, staff).want(201)
 	})
@@ -716,7 +725,7 @@ func TestMediaProcessing(t *testing.T) {
 
 	v := e.upload(t, tok, "product_media", movBytes).want(201)
 	f := e.upload(t, tok, "product_media", jpegBytes).want(201)
-	p := e.call(t, "POST", base, map[string]any{"category_id": "kitchen", "source_lang": "en", "name": "Blender 1.5L", "condition": "new",
+	p := e.call(t, "POST", base, map[string]any{"category_id": "kitchenware", "source_lang": "en", "name": "Blender 1.5L", "condition": "new",
 		"variants": []any{map[string]any{"options": []string{}, "price": "30", "stock_qty": 4}},
 		"media":    []any{map[string]any{"key": v.str("key"), "kind": "video"}, map[string]any{"key": f.str("key"), "kind": "photo"}}}, tok).want(201)
 	pid := p.str("id")
@@ -740,7 +749,7 @@ func TestMediaProcessing(t *testing.T) {
 	})
 	t.Run("ubah urutan tidak memproses ulang", func(t *testing.T) {
 		n := e.scalar(t, `SELECT count(*) FROM media_processing_jobs j JOIN product_media m ON m.id = j.media_id WHERE m.product_id = $1`, pid)
-		e.call(t, "PUT", base+"/"+pid, map[string]any{"category_id": "kitchen", "source_lang": "en", "name": "Blender 1.5L", "condition": "new",
+		e.call(t, "PUT", base+"/"+pid, map[string]any{"category_id": "kitchenware", "source_lang": "en", "name": "Blender 1.5L", "condition": "new",
 			"variants": []any{map[string]any{"options": []string{}, "price": "30", "stock_qty": 4}},
 			"media":    []any{map[string]any{"key": f.str("key"), "kind": "photo"}, map[string]any{"key": v.str("key"), "kind": "video"}}}, tok).want(200)
 		check(t, e.scalar(t, `SELECT count(*) FROM media_processing_jobs j JOIN product_media m ON m.id = j.media_id WHERE m.product_id = $1`, pid) == n,
@@ -748,7 +757,7 @@ func TestMediaProcessing(t *testing.T) {
 	})
 	t.Run("foto rusak: langsung pakai file asli (tidak macet 'processing')", func(t *testing.T) {
 		bad := e.upload(t, tok, "product_media", append([]byte{0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 'J', 'F', 'I', 'F', 0x00, 0x01}, make([]byte, 600)...)).want(201)
-		e.call(t, "PUT", base+"/"+pid, map[string]any{"category_id": "kitchen", "source_lang": "en", "name": "Blender 1.5L", "condition": "new",
+		e.call(t, "PUT", base+"/"+pid, map[string]any{"category_id": "kitchenware", "source_lang": "en", "name": "Blender 1.5L", "condition": "new",
 			"variants": []any{map[string]any{"options": []string{}, "price": "30", "stock_qty": 4}},
 			"media": []any{map[string]any{"key": v.str("key"), "kind": "video"}, map[string]any{"key": f.str("key"), "kind": "photo"},
 				map[string]any{"key": bad.str("key"), "kind": "photo"}}}, tok).want(200)

@@ -1,0 +1,166 @@
+{{define "top"}}<!doctype html>
+<html lang="{{.HTMLLang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{{.Title}}</title>
+{{if .Description}}<meta name="description" content="{{.Description}}">{{end}}
+{{if .Robots}}<meta name="robots" content="{{.Robots}}">{{end}}
+<link rel="canonical" href="{{.Canonical}}">
+{{if not .Robots}}{{range $l := .Langs}}<link rel="alternate" hreflang="{{index $.HTMLLangOf $l}}" href="{{index $.Alternates $l}}">
+{{end}}<link rel="alternate" hreflang="x-default" href="{{index .Alternates "km"}}">{{end}}
+<meta property="og:site_name" content="Phsar">
+<meta property="og:title" content="{{.Title}}">
+{{if .Description}}<meta property="og:description" content="{{.Description}}">{{end}}
+<meta property="og:url" content="{{.Canonical}}">
+<meta property="og:image" content="{{.Image}}">
+<meta property="og:locale" content="{{.OGLocale}}">
+<meta property="og:type" content="{{if eq .Active "product"}}product{{else}}website{{end}}">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="theme-color" content="#f50750">
+<link rel="icon" href="/assets/icon.svg?v={{.Version}}" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Noto+Sans+Khmer:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="/assets/site.css?v={{.Version}}">
+{{range .JSONLD}}<script type="application/ld+json">{{.}}</script>
+{{end}}</head>
+<body class="lang-{{.Lang}} page-{{.Active}}">
+{{glyphDefs}}
+<a class="skip" href="#main">{{.T "home"}}</a>
+{{with .Announce}}<div class="announce announce-{{.Color}}" role="note">{{if .Link}}<a href="{{.Link}}"{{if .External}} rel="noopener" target="_blank"{{end}}>{{.Text}} <span aria-hidden="true">›</span></a>{{else}}<span>{{.Text}}</span>{{end}}</div>
+{{end}}<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="{{.U "/"}}" aria-label="Phsar">
+      <span class="brand-mark">{{glyph "brand"}}</span>
+      <span class="brand-text"><b>Phsar</b><small>{{.T "tagline"}}</small></span>
+    </a>
+    {{if .Categories}}<details class="cat-menu">
+      <summary>{{glyph "grid" "mono"}}<span>{{.T "categories"}}</span></summary>
+      <div class="cat-panel">
+        <ul class="cat-list">
+          {{range .Categories}}<li>
+            <a class="cat-link" href="{{$.U "/c/"}}{{.Slug}}">{{catGlyph .Icon}}<span>{{.Name}}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+            <div class="cat-sub">
+              <p class="cat-sub-head"><b>{{.Name}}</b> <span>{{$.T "products" "n" .Count}}</span></p>
+              {{if .Children}}<div class="cat-sub-links">{{range .Children}}<a href="{{$.U "/c/"}}{{.Slug}}">{{.Name}}</a>{{end}}</div>{{end}}
+              <a class="cat-sub-all" href="{{$.U "/c/"}}{{.Slug}}">{{$.T "seeAllIn" "c" .Name}} ›</a>
+              <a class="cat-sub-watch" href="{{$.U "/c/"}}{{.Slug}}/watch">{{glyph "play" "mono"}}{{$.T "watchNew" "c" .Name}}</a>
+            </div>
+          </li>{{end}}
+        </ul>
+        {{with .Seasons}}<aside class="cat-seasons"><p>{{$.T "seasonTitle"}}</p>{{range .}}<a class="season season-{{.Color}}" href="{{.URL}}"><span class="season-tag">{{.Tag}}</span><b>{{.Title}}</b></a>{{end}}</aside>{{end}}
+      </div>
+    </details>{{end}}
+    <form class="search top-search" action="{{.U "/search"}}" method="get" role="search">
+      <button class="search-go" type="submit" aria-label="{{.T "search"}}">{{glyph "search"}}</button>
+      <input type="search" name="q" value="{{.Query}}" placeholder="{{.T "searchPh"}}" aria-label="{{.T "search"}}" enterkeyhint="search" maxlength="80">
+      <button class="photo-btn" type="button" data-photo aria-label="{{.T "photoSearch"}}">{{glyph "camera"}}<span>{{.T "photoBtn"}}</span></button>
+    </form>
+    <div class="top-actions">
+      <details class="lang-menu">
+        <summary aria-label="{{.T "chooseLang"}}">{{glyph "globe"}}<span>{{.LangName .Lang}}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <ul>
+          {{range $l := .Langs}}<li><a href="{{index $.LangLinks $l}}" hreflang="{{$l}}" lang="{{$l}}" {{if eq $l $.Lang}}aria-current="true"{{end}}>{{index $.LangFull $l}}{{if eq $l $.Lang}} <span aria-hidden="true">✓</span>{{end}}</a></li>{{end}}
+        </ul>
+      </details>
+      <a class="top-cart" href="{{.U "/cart"}}" aria-label="{{.T "cart"}}">{{glyph "cart"}}<span class="cart-count" data-cart-count hidden></span></a>
+    </div>
+  </div>
+</header>
+{{if .Prelaunch}}<div class="prelaunch"><div class="wrap">{{glyph "store"}}<p><b>{{.T "soonTitle"}}</b> <span>{{.T "soonText"}}</span></p><a href="/seller/">{{.T "soonSell"}}</a></div></div>{{end}}
+<main id="main">
+{{end}}
+
+{{define "bottom"}}
+</main>
+<footer class="foot">
+  <div class="wrap foot-in">
+    <div class="foot-brand">
+      <a class="brand" href="{{.U "/"}}"><span class="brand-mark">{{glyph "brand"}}</span><span class="brand-text"><b>Phsar</b><small>{{.T "tagline"}}</small></span></a>
+      <p>{{.T "footerAbout"}}</p>
+    </div>
+    <nav aria-label="{{.T "categories"}}">
+      {{range .Categories}}<a href="{{$.U "/c/"}}{{.Slug}}">{{.Name}}</a>{{end}}
+    </nav>
+    <nav aria-label="{{.T "language"}}">
+      <a href="/seller/">{{.T "sell"}}</a>
+      <a href="{{.U "/legal/terms"}}">{{.T "legal_buyer_terms"}}</a>
+      <a href="{{.U "/legal/privacy"}}">{{.T "legal_privacy_policy"}}</a>
+      <a href="{{.U "/legal/returns"}}">{{.T "legal_return_policy"}}</a>
+      <a href="{{.U "/contact"}}">{{.T "contact"}}</a>
+      {{range $l := .Langs}}<a href="{{index $.LangLinks $l}}" lang="{{$l}}">{{index $.LangFull $l}}</a>{{end}}
+    </nav>
+  </div>
+  <div class="wrap accept"><span>{{.T "weAccept"}}</span><img src="/assets/pay/aba.svg" alt="ABA" width="40" height="24"><img src="/assets/pay/khqr.svg" alt="KHQR" width="40" height="24"></div>
+  <p class="wrap copy">Phsar · {{.T "tagline"}} · {{.T "copyright" "y" .Year}}</p>
+</footer>
+<nav class="tabbar" aria-label="{{.T "mainMenu"}}">
+  <a href="{{.U "/"}}" {{if eq .Active "home"}}aria-current="page"{{end}}>{{glyph "home"}}<span>{{.T "home"}}</span></a>
+  <a href="{{.U "/search"}}" {{if eq .Active "search"}}aria-current="page"{{end}}>{{glyph "search"}}<span>{{.T "search"}}</span></a>
+  <a href="{{.U "/"}}#videos">{{glyph "video"}}<span>{{.T "videos"}}</span></a>
+  <a href="{{.U "/cart"}}" {{if eq .Active "cart"}}aria-current="page"{{end}}>{{glyph "cart"}}<span class="cart-count" data-cart-count hidden></span><span>{{.T "cart"}}</span></a>
+  <a href="{{.U "/orders"}}" {{if eq .Active "orders"}}aria-current="page"{{end}}>{{glyph "user"}}<span>{{.T "me"}}</span></a>
+</nav>
+<dialog class="sheet" id="photoSheet" aria-labelledby="photoTitle">
+  <div class="sheet-head"><h2 id="photoTitle">{{glyph "camera"}}{{.T "photoTitle"}}</h2><button type="button" class="icon-btn" data-close aria-label="✕">{{glyph "close" "mono"}}</button></div>
+  <div class="sheet-body">
+    <p class="muted" data-photo-intro>{{.T "photoIntro"}}</p>
+    <div class="photo-pick" hidden><img alt="" id="photoPreview"></div>
+    <p class="photo-status" id="photoStatus" role="status" aria-live="polite"></p>
+    <div id="photoResults"></div>
+  </div>
+  <div class="sheet-foot">
+    <label class="btn block photo-choose">{{glyph "camera" "mono"}}<span data-label-a="{{.T "photoChoose"}}" data-label-b="{{.T "photoAgain"}}">{{.T "photoChoose"}}</span>
+      <input type="file" accept="image/*" id="photoInput" hidden>
+    </label>
+    <p class="muted small tc">{{.T "photoPrivacy"}}</p>
+  </div>
+</dialog>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>window.PHSAR={lang:{{.Lang}},riel:{{.Riel}},t:{choose:{{.T "choose" "opt" ""}},left:{{.T "left" "n" "{n}"}},inStock:{{.T "inStock"}},out:{{.T "outOfStock"}},soon:{{.T "comingSoon"}},added:{{index .ShopT "added"}},viewCart:{{index .ShopT "viewCart"}},chooseFirst:{{index .ShopT "chooseFirst"}},copied:{{.T "copied"}},from:{{.T "from"}},photoWorking:{{.T "photoWorking"}},photoResults:{{.T "photoResults"}},photoNone:{{.T "photoNone"}},photoOff:{{.T "photoOff"}},photoTooBig:{{.T "photoTooBig"}},photoBad:{{.T "photoBad"}},photoBusy:{{.T "photoBusy"}}}};</script>
+<script src="/assets/site.js?v={{.Version}}" defer></script>
+<script src="/assets/report.js?v={{.Version}}" defer></script>
+{{/* tour: tur cara pakai untuk pengunjung baru */}}<script>window.PHSAR_TOUR={{.TourJS}};</script><script src="/assets/tour-site.js?v={{.Version}}" defer></script>
+</body>
+</html>
+{{end}}
+
+{{define "card"}}{{$p := .P}}{{with .C}}
+<article class="card">
+  <a class="card-img" href="{{$p.U "/p/"}}{{.Slug}}" tabindex="-1" aria-hidden="true">
+    {{if .CoverURL}}<img src="{{.CoverURL}}" alt="" loading="lazy" decoding="async">{{else}}<div class="noimg"></div>{{end}}
+    {{if .HasVideo}}<span class="dur">{{glyph "play" "mono"}}{{if .Duration}}{{durs .Duration}}{{end}}</span>{{end}}
+    {{if le .Stock 0}}<span class="badge sold">{{$p.T "soldOut"}}</span>{{else}}{{with pct .MinPrice .Compare}}<span class="badge off">-{{.}}%</span>{{end}}{{end}}
+    {{if ne .Condition "new"}}<span class="badge cond">{{$p.T .Condition}}</span>{{end}}
+    {{with .FlashEnds}}<span class="badge flash" data-flash-ends="{{.Format "2006-01-02T15:04:05Z07:00"}}">⚡ {{$p.T "flashSale"}}</span>{{end}}
+  </a>
+  <div class="card-body">
+    <h3><a href="{{$p.U "/p/"}}{{.Slug}}">{{.Name}}</a></h3>
+    <a class="card-store" href="{{$p.U "/s/"}}{{.StoreSlug}}"><span class="store-ico">{{glyph "store"}}</span><span>{{.StoreName}}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+    <div class="card-foot">
+      <p class="card-price"><b>{{if ne .MinPrice .MaxPrice}}<small>{{$p.T "from"}}</small> {{end}}${{money2 .MinPrice}}</b>{{if .Compare}} <s>${{money .Compare}}</s>{{end}}<span class="riel">{{rielOnly $p .MinPrice}}</span></p>
+      {{if and .VariantID (gt .Stock 0)}}<button type="button" class="card-cart" data-quick-add="{{.VariantID}}" aria-label="{{$p.T "addToCart"}}: {{.Name}}">{{glyph "cart"}}</button>
+      {{else}}<a class="card-cart" href="{{$p.U "/p/"}}{{.Slug}}" aria-label="{{$p.T "viewProduct"}}: {{.Name}}">{{glyph "cart"}}</a>{{end}}
+    </div>
+  </div>
+</article>
+{{end}}{{end}}
+
+{{define "vcard"}}{{$p := .P}}{{with .C}}
+<article class="vcard">
+  <a class="vcard-img" href="{{$p.U "/p/"}}{{.Slug}}">
+    {{if .PosterURL}}<img src="{{.PosterURL}}" alt="{{.Name}}" loading="lazy" decoding="async">{{else if .CoverURL}}<img src="{{.CoverURL}}" alt="{{.Name}}" loading="lazy">{{else}}<div class="noimg"></div>{{end}}
+    <span class="vplay">{{glyph "play" "mono"}}</span>
+    <span class="vview">{{$p.T "viewProduct"}}<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></span>
+    {{if .Duration}}<span class="vdur">{{durs .Duration}}</span>{{end}}
+  </a>
+  <h3><a href="{{$p.U "/p/"}}{{.Slug}}">{{.Name}}</a></h3>
+  <a class="card-store" href="{{$p.U "/s/"}}{{.StoreSlug}}"><span class="store-ico">{{glyph "store"}}</span><span>{{.StoreName}}</span><svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></a>
+  <p class="card-price"><b>{{if ne .MinPrice .MaxPrice}}<small>{{$p.T "from"}}</small> {{end}}${{money2 .MinPrice}}</b><span class="riel">{{rielOnly $p .MinPrice}}</span></p>
+</article>
+{{end}}{{end}}
+
+{{define "grid"}}{{$p := .P}}<div class="grid">{{range .Cards}}{{template "card" (pc $p .)}}{{end}}</div>{{end}}
+
+{{define "head"}}<div class="head"><div><h2 id="{{.ID}}">{{.Title}}</h2>{{if .Sub}}<p>{{.Sub}}</p>{{end}}</div>{{if .Rail}}<div class="rail-nav"><button type="button" class="round" data-rail-prev="{{.Rail}}" aria-label="{{.Prev}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 6-6 6 6 6"/></svg></button><button type="button" class="round" data-rail-next="{{.Rail}}" aria-label="{{.Next}}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6"/></svg></button></div>{{else if .More}}<a class="see-all" href="{{.More}}">{{.MoreText}} ›</a>{{end}}</div>{{end}}

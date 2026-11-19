@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"phsar/internal/auth"
+	"phsar/internal/hours"
 	"phsar/internal/notify"
 	"phsar/internal/platform/db"
 	"phsar/internal/seller"
@@ -24,11 +25,36 @@ import (
 )
 
 type Handler struct {
-	pool    *pgxpool.Pool
-	sellers *seller.Service
-	files   storage.Storage
-	log     *slog.Logger
+	pool     *pgxpool.Pool
+	sellers  *seller.Service
+	files    storage.Storage
+	log      *slog.Logger
+	Refunds  *RefundRoutes   // refund manual (paket shop); nil = tidak dipasang
+	Delivery *DeliveryRoutes // kurir & pengantaran
+	Payouts  *PayoutRoutes   // payout seller
+	Payments *PaymentRoutes  // payment gateway (super admin)
+	// Integrations: provider SMS & Login Facebook (super admin)
+	Integrations *IntegrationRoutes
+	Legal        *LegalRoutes // dokumen legal & kontak (super admin)
+	Returns      *ReturnRoutes
+	Content      *ContentRoutes // content: banner, pengumuman, koleksi, SEO (super admin)
+	Ads          *AdsRoutes     // ads: iklan bersponsor
+	Askbot       http.Handler   // askbot: aktif/nonaktif bot jawaban + pemakaian (super admin)
+	// courierreturn: antrean "Dikembalikan ke toko" (paket courierreturn); izin delivery.dispatch
+	CourierReturns http.Handler
 }
+
+// DeliveryRoutes: kurir & pengantaran (paket delivery).
+type DeliveryRoutes struct{ Couriers, SaveCourier, List, Assign, Proof http.HandlerFunc }
+
+// PayoutRoutes: saldo & payout seller (paket payout).
+type PayoutRoutes struct{ GetSettings, SaveSettings, List, Generate, Paid, Cancel http.HandlerFunc }
+
+// ReturnRoutes: retur & sengketa (paket returns).
+type ReturnRoutes struct{ List, Get, Decide, Refunded, Photo http.HandlerFunc }
+
+// RefundRoutes: handler refund dari paket shop (supaya admin tidak bergantung langsung pada shop).
+type RefundRoutes struct{ List, Done http.HandlerFunc }
 
 func NewHandler(pool *pgxpool.Pool, sellers *seller.Service, files storage.Storage, log *slog.Logger) *Handler {
 	return &Handler{pool: pool, sellers: sellers, files: files, log: log}
@@ -39,6 +65,88 @@ func (h *Handler) Routes() http.Handler {
 	r := chi.NewRouter()
 	r.Use(h.requireAdmin)
 	r.Get("/me", h.me)
+	r.Get("/dashboard", h.dashboard)
+	r.With(h.can("audit.view")).Get("/audit", h.audit)
+	r.Route("/commission", func(p chi.Router) {
+		p.Use(h.can("commission.manage"))
+		p.Get("/", h.commissionView)
+		p.Get("/stores", h.commissionStores)
+		p.Post("/rules", h.commissionSet)
+		p.Delete("/rules/{id}", h.commissionEnd)
+	})
+	// Menu admin tambahan (satu file per fitur)
+	h.mountReports(r)
+	h.mountSupport(r)
+	h.mountChat(r) // chat: percakapan pembeli ↔ toko untuk sengketa
+	h.mountReconciliation(r)
+	h.mountSweep(r)
+	h.mountInvoices(r)
+	h.mountAds(r)
+	h.mountPromos(r)
+	h.mountCatalog(r)
+	h.mountContent(r)
+	h.mountShipping(r)
+	h.mountJobs(r)
+	h.mountExtras(r)     // extras: strike otomatis & tarik saldo manual (super admin)
+	if h.Askbot != nil { // askbot: hanya super admin (izin "*")
+		r.With(h.can("askbot.configure")).Mount("/askbot", h.Askbot)
+	}
+	// CS: pelanggan, pesanan, log pembayaran
+	r.With(h.can("customer.view")).Get("/customers", h.listCustomers)
+	r.With(h.can("customer.view")).Get("/customers/{id}", h.customerDetail)
+	r.With(h.can("support.handle")).Post("/customers/{id}/notes", h.addCustomerNote)
+	r.With(h.can("support.handle")).Post("/customers/{id}/status", h.setCustomerStatus)
+	r.With(h.can("order.view")).Get("/orders", h.listOrders)
+	r.With(h.can("order.view")).Get("/orders/{no}", h.orderDetail)
+	r.With(h.can("order.view")).Get("/payment-events", h.listPaymentEvents)
+	if h.Returns != nil {
+		// CS memutuskan (return.decide); keuangan mengembalikan uang (refund.decide). Keduanya boleh melihat (order.view).
+		r.Route("/returns", func(p chi.Router) {
+			p.With(h.can("order.view")).Get("/", h.Returns.List)
+			p.With(h.can("order.view")).Get("/{id}", h.Returns.Get)
+			p.With(h.can("order.view")).Get("/{id}/photos/{i}", h.Returns.Photo)
+			p.With(h.can("return.decide")).Post("/{id}/decide", h.Returns.Decide)
+			p.With(h.can("refund.decide")).Post("/{id}/refunded", h.Returns.Refunded)
+		})
+	}
+	if h.Legal != nil {
+		r.Route("/legal", func(p chi.Router) {
+			p.Use(h.can("legal.manage")) // hanya super admin (izin "*")
+			p.Get("/", h.legalView)
+			p.Put("/settings", h.legalSaveSettings)
+			p.Post("/preview", h.legalPreview)
+			p.Post("/docs/{type}", h.legalPublish)
+		})
+	}
+	if h.Integrations != nil {
+		r.Route("/integrations", func(p chi.Router) {
+			p.Use(h.can("integration.configure")) // hanya super admin (izin "*")
+			p.Get("/", h.integrationsView)
+			p.Put("/sms", h.integrationsSaveSMS)
+			p.Post("/sms/test", h.integrationsTestSMS)
+			p.Put("/facebook", h.integrationsSaveFacebook)
+			p.Post("/facebook/test", h.integrationsTestFacebook)
+			p.Put("/ai", h.integrationsSaveAI) // AI: Anthropic utama, Gemini cadangan
+			p.Post("/ai/test", h.integrationsTestAI)
+			p.Put("/maps", h.integrationsSaveMaps)
+			p.Get("/usage", h.integrationsUsage) // pemakaian & pengingat saldo
+			p.Put("/usage/budget", h.integrationsSaveBudget)
+		})
+	}
+	if h.Payments != nil {
+		r.Route("/payments", func(p chi.Router) {
+			p.Use(h.can("payment.configure")) // hanya super admin (izin "*")
+			p.Get("/", h.paymentsView)
+			p.Put("/settings", h.paymentsSaveGeneral)
+			p.Put("/payway", h.paymentsSavePayWay)
+			p.Post("/payway/test", h.paymentsTestPayWay)
+		})
+	}
+	r.With(h.can("admin.manage")).Get("/roles", h.roles)
+	r.With(h.can("admin.manage")).Get("/admins", h.listAdmins)
+	r.With(h.can("admin.manage")).Post("/admins", h.addAdmin)
+	r.With(h.can("admin.manage")).Patch("/admins/{userID}", h.updateAdmin)
+	r.With(h.can("admin.manage")).Post("/admins/{userID}/mfa-reset", h.resetAdminMFA)
 	r.With(h.can("seller.verify")).Get("/stores", h.listStores)
 	r.With(h.can("seller.verify")).Get("/stores/{storeID}", h.storeDetail)
 	r.With(h.can("seller.verify")).Post("/stores/{storeID}/kyc", h.decideKYC)
@@ -49,6 +157,35 @@ func (h *Handler) Routes() http.Handler {
 	r.With(h.can("product.moderate")).Get("/products/{productID}", h.productDetail)
 	r.With(h.can("product.moderate")).Post("/products/{productID}/decision", h.decideProduct)
 	r.With(h.can("translation.review")).Put("/products/{productID}/translations/{lang}", h.reviewTranslation)
+	if h.Refunds != nil {
+		r.With(h.can("refund.decide")).Get("/refunds", h.Refunds.List)
+		r.With(h.can("refund.decide")).Post("/refunds/{orderID}/done", h.Refunds.Done)
+	}
+	r.With(h.can("order.rules")).Get("/order-timing", h.getOrderTiming) // hanya super admin (izin "*")
+	r.With(h.can("order.rules")).Put("/order-timing", h.saveOrderTiming)
+	// pricehistory: aturan harga flash (harga terendah 30 hari) — hanya super admin (izin "*")
+	r.With(h.can("flash.rules")).Get("/flash-rules", h.phGetRules)
+	r.With(h.can("flash.rules")).Put("/flash-rules", h.phSaveRules)
+	if h.Payouts != nil {
+		p := r.With(h.can("payout.approve"))
+		p.Get("/payout-settings", h.Payouts.GetSettings)
+		p.Put("/payout-settings", h.Payouts.SaveSettings)
+		p.Get("/payouts", h.Payouts.List)
+		p.Post("/payouts/generate", h.Payouts.Generate)
+		p.Post("/payouts/{id}/paid", h.Payouts.Paid)
+		p.Post("/payouts/{id}/cancel", h.Payouts.Cancel)
+	}
+	if h.Delivery != nil {
+		d := r.With(h.can("delivery.dispatch"))
+		d.Get("/couriers", h.Delivery.Couriers)
+		d.Post("/couriers", h.Delivery.SaveCourier)
+		d.Get("/deliveries", h.Delivery.List)
+		d.Post("/deliveries/{id}/assign", h.Delivery.Assign)
+		d.Get("/deliveries/{id}/proof", h.Delivery.Proof)
+	}
+	if h.CourierReturns != nil { // courierreturn
+		r.With(h.can("delivery.dispatch")).Mount("/courier-returns", h.CourierReturns)
+	}
 	return r
 }
 
@@ -108,7 +245,13 @@ func (h *Handler) me(w http.ResponseWriter, r *http.Request) {
 	for p := range a.perms {
 		perms = append(perms, p)
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"user_id": a.userID, "role": a.role, "permissions": perms})
+	var name, phone string
+	var backup int
+	_ = h.pool.QueryRow(r.Context(), `SELECT coalesce(u.name, ''), coalesce(u.phone, ''),
+		(SELECT count(*) FROM admin_mfa_backup_codes b WHERE b.user_id = u.id AND b.used_at IS NULL)
+		FROM users u WHERE u.id = $1`, a.userID).Scan(&name, &phone, &backup)
+	writeJSON(w, http.StatusOK, map[string]any{"user_id": a.userID, "role": a.role, "permissions": perms,
+		"name": name, "phone": phone, "backup_codes_left": backup})
 }
 
 type storeRow struct {
@@ -328,25 +471,29 @@ func notifyStore(ctx context.Context, tx pgx.Tx, storeID, kind string, p notify.
 // ---- Moderasi produk ----
 
 type productRow struct {
-	ID          string     `json:"id"`
-	Name        string     `json:"name"`
-	StoreName   string     `json:"store_name"`
-	StoreID     string     `json:"store_id"`
-	CategoryID  string     `json:"category_id"`
-	Condition   string     `json:"condition"`
-	Moderation  string     `json:"moderation_status"`
-	CoverURL    string     `json:"cover_url"`
-	MinPrice    *string    `json:"min_price"`
-	Flags       int        `json:"flags"`
-	Translating bool       `json:"translating"`
-	SubmittedAt *time.Time `json:"submitted_at"`
+	ID          string          `json:"id"`
+	Name        string          `json:"name"`
+	StoreName   string          `json:"store_name"`
+	StoreID     string          `json:"store_id"`
+	CategoryID  string          `json:"category_id"`
+	Condition   string          `json:"condition"`
+	Moderation  string          `json:"moderation_status"`
+	CoverURL    string          `json:"cover_url"`
+	MinPrice    *string         `json:"min_price"`
+	Flags       int             `json:"flags"`
+	Reasons     json.RawMessage `json:"reasons"` // alasan jalur manual (modrules.Reason*)
+	Translating bool            `json:"translating"`
+	SubmittedAt *time.Time      `json:"submitted_at"`
 }
 
 // GET /admin/api/products?status=pending_review — antrean moderasi, terlama dulu.
 func (h *Handler) listProducts(w http.ResponseWriter, r *http.Request) {
 	status := r.URL.Query().Get("status")
+	where, order := "p.moderation_status::text = $1", "p.submitted_at NULLS LAST, p.updated_at"
 	switch status {
 	case "pending_review", "approved", "changes_requested", "rejected":
+	case "auto": // tayang otomatis, belum dilihat admin — terbaru dulu
+		where, order = "p.moderation_status = 'approved' AND p.post_review_pending AND $1 <> ''", "p.published_at DESC NULLS LAST"
 	default:
 		status = "pending_review"
 	}
@@ -354,14 +501,14 @@ func (h *Handler) listProducts(w http.ResponseWriter, r *http.Request) {
 		SELECT p.id, coalesce(t.name, ''), st.name, st.id, p.category_id, p.condition::text, p.moderation_status::text,
 		       coalesce((SELECT coalesce(m.image_url, m.storage_key) FROM product_media m WHERE m.product_id = p.id AND m.deleted_at IS NULL AND m.kind = 'photo'
 		                 ORDER BY m.sort_order LIMIT 1), ''),
-		       p.min_price::text, coalesce(jsonb_array_length(p.auto_flags->'keywords'), 0),
+		       p.min_price::text, coalesce(jsonb_array_length(p.auto_flags->'keywords'), 0), coalesce(p.auto_flags->'reasons', '[]'),
 		       EXISTS (SELECT 1 FROM translation_jobs j WHERE j.entity_table = 'product_translations' AND j.entity_id = p.id::text
 		               AND j.status IN ('queued','running')),
 		       p.submitted_at
 		FROM products p JOIN stores st ON st.id = p.store_id
 		LEFT JOIN product_translations t ON t.product_id = p.id AND t.lang = p.source_lang
-		WHERE p.deleted_at IS NULL AND p.status <> 'draft' AND p.moderation_status::text = $1
-		ORDER BY p.submitted_at NULLS LAST, p.updated_at
+		WHERE p.deleted_at IS NULL AND p.status <> 'draft' AND `+where+`
+		ORDER BY `+order+`
 		LIMIT 200`, status)
 	if err != nil {
 		h.fail(w, err)
@@ -373,7 +520,7 @@ func (h *Handler) listProducts(w http.ResponseWriter, r *http.Request) {
 		var p productRow
 		var cover string
 		if err := rows.Scan(&p.ID, &p.Name, &p.StoreName, &p.StoreID, &p.CategoryID, &p.Condition, &p.Moderation, &cover,
-			&p.MinPrice, &p.Flags, &p.Translating, &p.SubmittedAt); err != nil {
+			&p.MinPrice, &p.Flags, &p.Reasons, &p.Translating, &p.SubmittedAt); err != nil {
 			h.fail(w, err)
 			return
 		}
@@ -478,7 +625,9 @@ func (h *Handler) decideProduct(w http.ResponseWriter, r *http.Request) {
 		if _, err := tx.Exec(r.Context(), `
 			UPDATE products SET moderation_status = $2::moderation_status, moderation_note = $3,
 				published_at = CASE WHEN $2 = 'approved' THEN coalesce(published_at, now()) ELSE published_at END,
-				robots_index = ($2 = 'approved')
+				robots_index = ($2 = 'approved'),
+				approved_min_price = CASE WHEN $2 = 'approved' THEN min_price ELSE approved_min_price END,
+				post_review_pending = false
 			WHERE id = $1`, id, decision, nilIfBlank(d.Note)); err != nil {
 			return err
 		}
@@ -558,7 +707,10 @@ func (h *Handler) privateFile(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) fail(w http.ResponseWriter, err error) {
+	var he hours.FieldError
 	switch {
+	case errors.As(err, &he):
+		writeJSON(w, http.StatusUnprocessableEntity, map[string]any{"error": map[string]string{"code": "validation", "field": he.Field, "message": he.Msg}})
 	case errors.Is(err, seller.ErrNotFound):
 		writeErr(w, http.StatusNotFound, "not_found", err.Error())
 	case errors.Is(err, errNotPending):
@@ -582,6 +734,7 @@ func nilIfBlank(s string) *string {
 
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
 	if err := json.NewDecoder(io.LimitReader(r.Body, 16<<10)).Decode(v); err != nil {
+		writeErr(w, http.StatusBadRequest, "bad_json", "invalid JSON body")
 		return false
 	}
 	return true
