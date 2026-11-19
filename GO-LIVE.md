@@ -109,6 +109,15 @@ Denda menjalankan e-commerce tanpa license dari MoC: KHR 10.000.000 (~US$2.500).
 - [ ] Admin → Login & SMS: isi App ID + App Secret, centang "Show Continue with Facebook", simpan, klik **Test App ID & Secret**.
 - [ ] Aplikasi Flutter nanti memakai App ID yang sama (endpoint `POST /v1/app/auth/facebook`).
 
+## 4d. Login Google (& Apple untuk aplikasi iPhone)
+
+- [ ] Google Cloud (project yang sama dengan Maps) → APIs & Services → **OAuth consent screen**: nama aplikasi Phsar, logo, email kontak, domain khloak.online / domain produksi → Publish
+- [ ] Credentials → **Create OAuth client ID** → tipe *Web application* → tempel semua **Authorized redirect URIs** dan **JavaScript origins** dari Admin → Integrasi → Login & SMS → kartu Google (tombol Copy)
+- [ ] Client ID + Client Secret diisi di kartu Google (bukan di .env / chat) → centang tampilkan → Simpan → **Test Client ID & Secret** harus ✅
+- [ ] Coba login "Lanjut dengan Google" di Seller Center, website (keranjang), admin
+- [ ] Nanti untuk aplikasi Flutter: buat OAuth client Android & iOS → isi di "App client IDs"
+- [ ] Sign in with Apple: hanya aplikasi iPhone, aktifkan setelah akun Apple Developer ada (Bundle ID di kartu Apple)
+
 ## 4c. Checkout sebagai tamu
 - [x] Tombol "Continue as guest" di checkout: tanpa akun; pesanan tersimpan di browser itu. Tamu tidak bisa membuka toko.
 - [ ] Batas 30 akun tamu per IP per jam (anti-spam) — tinjau ulang setelah ada data.

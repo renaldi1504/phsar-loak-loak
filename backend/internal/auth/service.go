@@ -42,6 +42,8 @@ type Service struct {
 	smsSet bool           // SetSMSSender dipanggil (tes) → selalu dipakai
 	gw     SMSGateway     // provider SMS yang diatur admin (paket integ)
 	fb     FacebookConfig // Login Facebook (paket integ)
+	google GoogleConfig   // Login Google (paket integ)
+	apple  AppleConfig    // Sign in with Apple — aplikasi iPhone (paket integ)
 	tg     *TelegramClient
 	now    func() time.Time
 }
@@ -95,7 +97,7 @@ func (c ClientInfo) ipOrNil() *netip.Addr {
 
 // identity: siapa yang login, dari provider mana.
 type identity struct {
-	provider string // telegram · sms · facebook · apple
+	provider string // telegram · sms · facebook · google · apple
 	uid      string
 	display  string
 	name     string

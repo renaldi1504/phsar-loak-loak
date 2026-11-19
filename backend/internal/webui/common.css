@@ -24,6 +24,7 @@ button,.btn{font:inherit;font-weight:700;min-height:44px;padding:0 18px;border-r
 button.primary{background:var(--pink);border-color:var(--pink);color:#fff}
 button.danger{color:var(--bad);border-color:#fca5a5}
 button.tg{background:#229ED9;border-color:#229ED9;color:#fff}
+button.gg{background:#fff;border:1px solid #dadce0;color:#1f1f1f;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600}
 button.fb{background:#1877F2;border-color:#1877F2;color:#fff;display:flex;align-items:center;justify-content:center;gap:10px}
 button:disabled{opacity:.4;cursor:default}
 .chip{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;background:#f1edf1;color:#3d4a63;white-space:nowrap}

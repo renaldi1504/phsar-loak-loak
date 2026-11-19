@@ -205,19 +205,19 @@ const loginT = {
     err_not_admin: 'This account is not a Phsar admin.', tgExpired: 'The Telegram link expired. Try again.', codeSent: 'Code sent. (Development: the code is in the server log.)', loginAgain: 'Please sign in again.',
     err_otp_invalid: 'Wrong or expired code.', err_otp_too_soon: 'Wait a minute before requesting another code.', err_phone_invalid: 'Invalid phone number.',
     err_telegram_disabled: 'Telegram login is not configured on this server.', err_otp_rate_limited: 'Too many codes requested. Try again later.',
-    fb: 'Continue with Facebook', err_facebook_cancelled: 'Facebook login was cancelled.', err_facebook_failed: 'Facebook login failed. Please try again.', err_facebook_expired: 'The Facebook login took too long. Please try again.', err_facebook_disabled: 'Facebook login is not available yet.', err_sms_failed: 'The SMS could not be sent right now. Try again or use Telegram.', err_sms_disabled: 'SMS login is not available yet. Please continue with Telegram.', err_user_suspended: 'This account is suspended.'},
+    gg: 'Continue with Google', err_google_cancelled: 'Google sign-in was cancelled.', err_google_failed: 'Google sign-in failed. Please try again.', err_google_expired: 'The Google sign-in took too long. Please try again.', err_google_disabled: 'Google sign-in is not available yet.', fb: 'Continue with Facebook', err_facebook_cancelled: 'Facebook login was cancelled.', err_facebook_failed: 'Facebook login failed. Please try again.', err_facebook_expired: 'The Facebook login took too long. Please try again.', err_facebook_disabled: 'Facebook login is not available yet.', err_sms_failed: 'The SMS could not be sent right now. Try again or use Telegram.', err_sms_disabled: 'SMS login is not available yet. Please continue with Telegram.', err_user_suspended: 'This account is suspended.'},
   km: {loginTitle: 'ចូលគណនី', loginSub: 'ប្រើគណនីដូចកម្មវិធី Phsar។', tg: 'បន្តជាមួយ Telegram', or: 'ឬ',
     phone: 'លេខទូរស័ព្ទ', sendCode: 'ផ្ញើលេខកូដ SMS', code: 'លេខកូដ 6 ខ្ទង់', verify: 'ចូល', waitingTg: 'បើក Telegram ហើយចុច Start ក្នុងបូត…',
     err_not_admin: 'គណនីនេះមិនមែនជាអ្នកគ្រប់គ្រង Phsar ទេ។', tgExpired: 'តំណ Telegram ផុតកំណត់។ សូមព្យាយាមម្តងទៀត។', codeSent: 'បានផ្ញើលេខកូដ។', loginAgain: 'សូមចូលម្តងទៀត។',
     err_otp_invalid: 'លេខកូដខុស ឬផុតកំណត់។', err_otp_too_soon: 'សូមរង់ចាំមួយនាទីមុនស្នើលេខកូដថ្មី។', err_phone_invalid: 'លេខទូរស័ព្ទមិនត្រឹមត្រូវ។',
     err_telegram_disabled: 'មិនទាន់កំណត់ការចូលតាម Telegram។', err_otp_rate_limited: 'ស្នើលេខកូដច្រើនពេក។ សូមព្យាយាមពេលក្រោយ។',
-    fb: 'បន្តជាមួយ Facebook', err_facebook_cancelled: 'បានបោះបង់ការចូលតាម Facebook។', err_facebook_failed: 'ការចូលតាម Facebook បរាជ័យ។ សូមព្យាយាមម្តងទៀត។', err_facebook_expired: 'ការចូលតាម Facebook យូរពេក។ សូមព្យាយាមម្តងទៀត។', err_facebook_disabled: 'មិនទាន់អាចចូលតាម Facebook បានទេ។', err_sms_failed: 'មិនអាចផ្ញើ SMS ឥឡូវនេះទេ។ សូមព្យាយាមម្តងទៀត ឬប្រើ Telegram។', err_sms_disabled: 'មិនទាន់អាចចូលដោយ SMS បានទេ។ សូមបន្តជាមួយ Telegram។', err_user_suspended: 'គណនីនេះត្រូវបានផ្អាក។'},
+    gg: 'បន្តជាមួយ Google', err_google_cancelled: 'បានបោះបង់ការចូលតាម Google។', err_google_failed: 'ការចូលតាម Google បរាជ័យ។ សូមព្យាយាមម្តងទៀត។', err_google_expired: 'ការចូលតាម Google យូរពេក។ សូមព្យាយាមម្តងទៀត។', err_google_disabled: 'មិនទាន់អាចចូលតាម Google បានទេ។', fb: 'បន្តជាមួយ Facebook', err_facebook_cancelled: 'បានបោះបង់ការចូលតាម Facebook។', err_facebook_failed: 'ការចូលតាម Facebook បរាជ័យ។ សូមព្យាយាមម្តងទៀត។', err_facebook_expired: 'ការចូលតាម Facebook យូរពេក។ សូមព្យាយាមម្តងទៀត។', err_facebook_disabled: 'មិនទាន់អាចចូលតាម Facebook បានទេ។', err_sms_failed: 'មិនអាចផ្ញើ SMS ឥឡូវនេះទេ។ សូមព្យាយាមម្តងទៀត ឬប្រើ Telegram។', err_sms_disabled: 'មិនទាន់អាចចូលដោយ SMS បានទេ។ សូមបន្តជាមួយ Telegram។', err_user_suspended: 'គណនីនេះត្រូវបានផ្អាក។'},
   zh: {loginTitle: '登录', loginSub: '使用与 Phsar App 相同的账号。', tg: '使用 Telegram 继续', or: '或',
     phone: '手机号', sendCode: '发送短信验证码', code: '6 位验证码', verify: '登录', waitingTg: '请打开 Telegram 并在机器人中点击 Start…',
     err_not_admin: '此账号不是 Phsar 管理员。', tgExpired: 'Telegram 链接已过期，请重试。', codeSent: '验证码已发送。', loginAgain: '请重新登录。',
     err_otp_invalid: '验证码错误或已过期。', err_otp_too_soon: '请稍等一分钟再获取验证码。', err_phone_invalid: '手机号无效。',
     err_telegram_disabled: '服务器未配置 Telegram 登录。', err_otp_rate_limited: '验证码请求过多，请稍后再试。',
-    fb: '使用 Facebook 继续', err_facebook_cancelled: '已取消 Facebook 登录。', err_facebook_failed: 'Facebook 登录失败，请重试。', err_facebook_expired: 'Facebook 登录超时，请重试。', err_facebook_disabled: '暂不支持 Facebook 登录。', err_sms_failed: '短信暂时无法发送，请重试或使用 Telegram。', err_sms_disabled: '暂不支持短信登录，请使用 Telegram 继续。', err_user_suspended: '此账号已被停用。'},
+    gg: '使用 Google 继续', err_google_cancelled: '已取消 Google 登录。', err_google_failed: 'Google 登录失败，请重试。', err_google_expired: 'Google 登录超时，请重试。', err_google_disabled: '暂不支持 Google 登录。', fb: '使用 Facebook 继续', err_facebook_cancelled: '已取消 Facebook 登录。', err_facebook_failed: 'Facebook 登录失败，请重试。', err_facebook_expired: 'Facebook 登录超时，请重试。', err_facebook_disabled: '暂不支持 Facebook 登录。', err_sms_failed: '短信暂时无法发送，请重试或使用 Telegram。', err_sms_disabled: '暂不支持短信登录，请使用 Telegram 继续。', err_user_suspended: '此账号已被停用。'},
 };
 function addStrings(dict) { for (const l of ['en', 'km', 'zh']) P.T[l] = Object.assign(P.T[l] || {}, dict[l]); }
 addStrings(loginT);
@@ -225,8 +225,9 @@ addStrings(loginT);
 // Server memberi tahu lewat /ui/config.js apakah login SMS / Telegram tersedia (production awal: hanya Telegram).
 function loginModes() {
   const c = window.PHSAR_CONFIG || {};
-  return {tg: c.telegram !== false, sms: c.sms !== false, fb: c.facebook === true};
+  return {tg: c.telegram !== false, sms: c.sms !== false, fb: c.facebook === true, gg: c.google === true};
 }
+const ggIcon = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#4285F4" d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.4h6.5a5.6 5.6 0 0 1-2.4 3.6v3h3.9c2.2-2.1 3.5-5.1 3.5-8.7z"/><path fill="#34A853" d="M12 24c3.2 0 6-1.1 8-2.9l-3.9-3c-1.1.7-2.5 1.2-4.1 1.2-3.1 0-5.8-2.1-6.7-5H1.3v3.1A12 12 0 0 0 12 24z"/><path fill="#FBBC05" d="M5.3 14.3a7.2 7.2 0 0 1 0-4.6V6.6h-4a12 12 0 0 0 0 10.8z"/><path fill="#EA4335" d="M12 4.8c1.8 0 3.3.6 4.6 1.8l3.4-3.4A12 12 0 0 0 1.3 6.6l4 3.1c.9-2.9 3.6-4.9 6.7-4.9z"/></svg>';
 const fbIcon = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path fill="#fff" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4H7.1V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z"/></svg>';
 // Kembali dari Facebook dengan ?auth_error=… → tampilkan pesan, lalu hapus dari alamat.
 (function () {
@@ -242,8 +243,9 @@ function loginView(title) {
     <div><h1>${esc(title)}</h1><p class="muted">${t('loginSub')}</p></div>
     ${m.tg ? `<button class="tg" id="tgBtn" type="button">${t('tg')}</button>
     <p class="muted hidden" id="tgWait">${t('waitingTg')}</p>` : ''}
+    ${m.gg ? `<button class="gg" id="ggBtn" type="button">${ggIcon}${t('gg')}</button>` : ''}
     ${m.fb ? `<button class="fb" id="fbBtn" type="button">${fbIcon}${t('fb')}</button>` : ''}
-    ${(m.tg || m.fb) && m.sms ? `<div class="or">${t('or')}</div>` : ''}
+    ${(m.tg || m.fb || m.gg) && m.sms ? `<div class="or">${t('or')}</div>` : ''}
     ${m.sms ? `<label>${t('phone')}<input id="phone" inputmode="tel" autocomplete="tel" placeholder="012 345 678"></label>
     <button id="sendBtn" type="button">${t('sendCode')}</button>
     <label>${t('code')}<input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6"></label>
@@ -252,6 +254,7 @@ function loginView(title) {
 }
 function bindLogin(onDone) {
   if ($('#fbBtn')) $('#fbBtn').onclick = () => { location.href = P.authBase + '/facebook/start?return=' + encodeURIComponent(location.pathname + location.search + location.hash); };
+  if ($('#ggBtn')) $('#ggBtn').onclick = () => { location.href = P.authBase + '/google/start?return=' + encodeURIComponent(location.pathname + location.search + location.hash); };
   if ($('#tgBtn')) $('#tgBtn').onclick = async () => {
     try {
       const s = await authPost('/telegram/start', {});

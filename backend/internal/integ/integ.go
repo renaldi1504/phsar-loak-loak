@@ -58,7 +58,9 @@ func (e FieldError) Error() string { return e.Field + ": " + e.Msg }
 type Defaults struct {
 	Env         string // development · staging · production
 	SMSProvider string // SMS_PROVIDER dari .env (log · off)
-	BaseURL     string // PUBLIC_BASE_URL, untuk daftar redirect URI Facebook
+	BaseURL     string // PUBLIC_BASE_URL, untuk daftar redirect URI Facebook / Google
+	SellerURL   string // SELLER_BASE_URL (subdomain Seller Center), kosong = BaseURL
+	AdminURL    string // ADMIN_BASE_URL (subdomain admin), kosong = BaseURL
 	// Cadangan dari .env kalau belum diisi di admin (halaman Integrasi).
 	AnthropicKey, AnthropicModel string
 	GeminiKey, GeminiModel       string
@@ -90,6 +92,8 @@ type state struct {
 	fbID    string
 	fbKey   string
 	ai      aiState // kunci AI & Google Maps (ai.go)
+	google  googleState
+	apple   appleState
 }
 
 func (s *Store) client() *http.Client {
@@ -261,6 +265,9 @@ func (s *Store) read(ctx context.Context) (*state, error) {
 		return nil, err
 	}
 	st.ai = ai
+	if st.google, st.apple, err = s.readOAuth(ctx, s.Pool); err != nil {
+		return nil, err
+	}
 	return st, nil
 }
 
@@ -357,9 +364,11 @@ func (s *Store) FacebookURLs() (dialog, graph string) {
 
 // RedirectURIs: alamat yang harus didaftarkan di Facebook Developers → Facebook Login → Valid OAuth Redirect URIs.
 func (s *Store) RedirectURIs() []string {
-	base := strings.TrimRight(s.Def.BaseURL, "/")
-	return []string{base + "/shop/auth/facebook/callback", base + "/seller/auth/facebook/callback",
-		base + "/courier/auth/facebook/callback", base + "/admin/auth/facebook/callback"}
+	out := s.GoogleRedirectURIs() // sama persis, hanya /google/ → /facebook/
+	for i, u := range out {
+		out[i] = strings.Replace(u, "/auth/google/callback", "/auth/facebook/callback", 1)
+	}
+	return out
 }
 
 // ---- tampilan & perubahan oleh super admin ----
@@ -392,8 +401,10 @@ type View struct {
 		VerifiedAt   *time.Time  `json:"verified_at"`
 		LastTest     *TestResult `json:"last_test"`
 	} `json:"facebook"`
-	AI       AIView   `json:"ai"`
-	Maps     MapsView `json:"maps"`
+	Google   GoogleView `json:"google"`
+	Apple    AppleView  `json:"apple"`
+	AI       AIView     `json:"ai"`
+	Maps     MapsView   `json:"maps"`
 	Telegram struct {
 		BotSet   bool   `json:"bot_set"` // diatur di .env (TELEGRAM_BOT_TOKEN), perlu restart
 		Username string `json:"username"`
@@ -425,6 +436,9 @@ func (s *Store) View(ctx context.Context) (View, error) {
 	v.Facebook.RedirectURIs = s.RedirectURIs()
 	v.Production = s.Def.Env == "production"
 	if v.AI, v.Maps, err = s.aiView(ctx, st); err != nil {
+		return v, err
+	}
+	if v.Google, v.Apple, err = s.oauthView(ctx, st); err != nil {
 		return v, err
 	}
 	v.Telegram.BotSet, v.Telegram.Username = s.Def.TelegramSet, s.Def.TelegramUsername

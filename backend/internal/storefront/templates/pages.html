@@ -173,7 +173,7 @@
 
 {{define "shop"}}{{template "top" .}}{{$d := .Data}}
 {{if eq $d.Mode "checkout"}}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">{{end}}
-<div class="wrap shop" id="shop" data-mode="{{$d.Mode}}" data-no="{{$d.OrderNo}}" data-tg="{{$d.TelegramLogin}}" data-test="{{$d.Test}}" data-sms="{{$d.SMS}}" data-fb="{{$d.FB}}" data-closed="{{$d.Closed}}">
+<div class="wrap shop" id="shop" data-mode="{{$d.Mode}}" data-no="{{$d.OrderNo}}" data-tg="{{$d.TelegramLogin}}" data-test="{{$d.Test}}" data-sms="{{$d.SMS}}" data-fb="{{$d.FB}}" data-gg="{{$d.GG}}" data-closed="{{$d.Closed}}">
   <div class="loading" aria-busy="true"><span class="spin"></span></div>
   <noscript><p class="empty">JavaScript is required to order.</p></noscript>
 </div>
@@ -379,13 +379,13 @@ p{margin:0;color:var(--muted)}
 
     <section class="sell-sec" aria-labelledby="slSteps"><h2 id="slSteps">{{.T "sl_stepsT"}}</h2><p class="muted">{{.T "sl_stepsSub"}}</p>
       <ol class="sell-steps">{{range $n := (items 1 2 3 4 5)}}
-        <li><span class="n" aria-hidden="true">{{$n}}</span><div><b>{{$p.T (printf "sl_s%dT" $n)}}</b><p>{{$p.T (printf "sl_s%dB" $n)}}</p></div></li>{{end}}
+        <li><span class="n" aria-hidden="true">{{$n}}</span><div><b>{{$p.T (printf "sl_s%dT" $n)}}</b><p>{{$p.T (printf "sl_s%dB" $n) "methods" $d.Methods}}</p></div></li>{{end}}
       </ol>
     </section>
 
     <div class="sell-two">
       <section class="panel sell-sec" aria-labelledby="slPrep"><h2 id="slPrep">{{.T "sl_prepT"}}</h2>
-        <ul class="sell-check">{{range $n := (items 1 2 3 4 5 6)}}<li>{{glyph "check"}}<span>{{$p.T (printf "sl_p%d" $n)}}</span></li>{{end}}</ul>
+        <ul class="sell-check">{{range $n := (items 1 2 3 4 5 6)}}<li>{{glyph "check"}}<span>{{$p.T (printf "sl_p%d" $n) "methods" $d.Methods}}</span></li>{{end}}</ul>
       </section>
       <section class="sell-sec" aria-labelledby="slFaq"><h2 id="slFaq">{{.T "sl_faqT"}}</h2>
         {{range $n := (items 1 2 3 4 5 6)}}<details class="sell-faq"><summary>{{$p.T (printf "sl_q%d" $n)}}</summary><p>{{$p.T (printf "sl_a%d" $n) "rate" $d.Rate}}</p></details>{{end}}

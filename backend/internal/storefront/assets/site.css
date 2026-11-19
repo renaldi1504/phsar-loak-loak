@@ -468,6 +468,8 @@ body:has(.buybar) { padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
 .btn.block { display: flex; width: 100%; margin-top: 12px; padding-top: 12px; padding-bottom: 12px; }
 .btn.disabled { background: #c9ccd4; pointer-events: none; }
 .btn.tg { background: #229ed9; width: 100%; }
+.btn.gg { background: #fff; color: #1f1f1f; border: 1px solid #dadce0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.btn.gg:hover { background: #f8f9fa; }
 .btn.fb { background: #1877f2; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; }
 .summary .muted.small { margin: 10px 0 0; }
 .field { display: flex; flex-direction: column; gap: 6px; font-size: 14px; font-weight: 600; color: var(--navy); margin-bottom: 12px; }

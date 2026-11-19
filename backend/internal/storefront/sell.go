@@ -13,6 +13,7 @@ import (
 
 type sellData struct {
 	Rate      string // komisi global saat ini, mis. "8"
+	Methods   string // cara daftar yang aktif sekarang, mis. "Telegram, Google or your phone number"
 	SellerURL string // Seller Center dengan bahasa yang sama
 }
 
@@ -30,14 +31,40 @@ func (h *Handler) commissionRate(ctx context.Context) string {
 	return strings.TrimSuffix(strings.TrimRight(rate.StringFixed(2), "0"), ".")
 }
 
+// loginMethods: cara login yang benar-benar aktif (mengikuti pengaturan admin), dalam bahasa halaman.
+func (h *Handler) loginMethods(ctx context.Context, lang string) string {
+	var m []string
+	if h.TelegramLogin {
+		m = append(m, "Telegram")
+	}
+	if h.Logins != nil && h.Logins.GoogleEnabled(ctx) {
+		m = append(m, "Google")
+	}
+	if h.Logins != nil && h.Logins.FacebookEnabled(ctx) {
+		m = append(m, "Facebook")
+	}
+	if h.Logins == nil || h.Logins.SMSEnabled(ctx) || len(m) == 0 {
+		m = append(m, T(lang, "sl_phone"))
+	}
+	if len(m) == 1 {
+		return m[0]
+	}
+	sep := ", "
+	if lang == "zh" {
+		sep = "、"
+	}
+	return strings.Join(m[:len(m)-1], sep) + " " + T(lang, "sl_or") + " " + m[len(m)-1]
+}
+
 func (h *Handler) sellPage(w http.ResponseWriter, r *http.Request, p *Page) (string, int, error) {
 	p.Title, p.Description, p.Active = T(p.Lang, "sl_title")+" · Phsar", T(p.Lang, "sl_heroSub"), "sell"
-	p.Data = sellData{Rate: h.commissionRate(r.Context()), SellerURL: "/seller/?lang=" + p.Lang}
+	p.Data = sellData{Rate: h.commissionRate(r.Context()), Methods: h.loginMethods(r.Context(), p.Lang), SellerURL: "/seller/?lang=" + p.Lang}
 	return "sell", http.StatusOK, nil
 }
 
 var sellStrs = map[string]map[string]string{
 	"en": {
+		"sl_phone": "your phone number", "sl_or": "or",
 		"sl_title": "Sell on Phsar", "sl_badge": "For shops in Sihanoukville",
 		"sl_hero": "Open your shop on Phsar — free", "sl_heroSub": "Reach buyers in Sihanoukville with photos and short videos. Buyers pay first, our courier picks up, you get paid to your bank.",
 		"sl_cta": "Register as a seller", "sl_ctaSub": "Already a seller? The same button signs you in.",
@@ -50,13 +77,13 @@ var sellStrs = map[string]map[string]string{
 		"sl_w5T": "Paid to your bank", "sl_w5B": "Your earnings are transferred to your bank account on the payout schedule.",
 		"sl_w6T": "Write once, 3 languages", "sl_w6B": "Write your product in one language — Phsar translates it to Khmer, English and Chinese.",
 		"sl_stepsT": "How to start", "sl_stepsSub": "About 10–15 minutes. You can stop and continue later.",
-		"sl_s1T": "Sign up in a minute", "sl_s1B": "Use what you already have — Telegram, Facebook or your phone number. Your account is created automatically.",
+		"sl_s1T": "Sign up in a minute", "sl_s1B": "Use what you already have — {methods}. Your account is created automatically.",
 		"sl_s2T": "Create your shop", "sl_s2B": "Shop name, a short description and your logo.",
 		"sl_s3T": "Verify your identity", "sl_s3B": "A photo of your ID card or passport (companies: business documents).",
 		"sl_s4T": "Add your pickup point", "sl_s4B": "The place in Sihanoukville where our courier collects your orders.",
 		"sl_s5T": "Send for review, add products", "sl_s5B": "Phsar checks your shop and tells you by notification. Meanwhile you can already prepare products.",
 		"sl_prepT": "What to prepare",
-		"sl_p1":    "A Telegram or Facebook account, or a phone number", "sl_p2": "Photo of your ID card or passport", "sl_p3": "A bank account in your own name or your company’s name",
+		"sl_p1":    "One way to sign in: {methods}", "sl_p2": "Photo of your ID card or passport", "sl_p3": "A bank account in your own name or your company’s name",
 		"sl_p4": "At least 3 photos per product — a short video is recommended", "sl_p5": "Your pickup address in Sihanoukville",
 		"sl_p6":   "Companies: business registration and TIN (individuals without TIN can sell too)",
 		"sl_faqT": "Questions",
@@ -69,6 +96,7 @@ var sellStrs = map[string]map[string]string{
 		"sl_endT": "Ready to start?", "sl_endB": "Sign up in a minute — your shop can be ready today.",
 	},
 	"km": {
+		"sl_phone": "លេខទូរស័ព្ទ", "sl_or": "ឬ",
 		"sl_title": "លក់លើ Phsar", "sl_badge": "សម្រាប់ហាងនៅក្រុងព្រះសីហនុ",
 		"sl_hero": "បើកហាងរបស់អ្នកលើ Phsar — ឥតគិតថ្លៃ", "sl_heroSub": "ឈានដល់អ្នកទិញនៅក្រុងព្រះសីហនុ តាមរយៈរូបថត និងវីដេអូខ្លីៗ។ អ្នកទិញបង់ប្រាក់មុន អ្នកដឹករបស់យើងមកយក ហើយអ្នកទទួលប្រាក់ចូលគណនីធនាគារ។",
 		"sl_cta": "ចុះឈ្មោះជាអ្នកលក់", "sl_ctaSub": "ជាអ្នកលក់រួចហើយ? ប៊ូតុងដដែលនេះ ក៏ប្រើសម្រាប់ចូលគណនីដែរ។",
@@ -81,13 +109,13 @@ var sellStrs = map[string]map[string]string{
 		"sl_w5T": "ប្រាក់ចូលគណនីធនាគារ", "sl_w5B": "ប្រាក់ចំណូលរបស់អ្នកត្រូវបានផ្ទេរចូលគណនីធនាគារតាមកាលវិភាគទូទាត់។",
 		"sl_w6T": "សរសេរម្តង បាន 3 ភាសា", "sl_w6B": "សរសេរផលិតផលជាភាសាមួយ — Phsar បកប្រែជាភាសាខ្មែរ អង់គ្លេស និងចិនឲ្យ។",
 		"sl_stepsT": "របៀបចាប់ផ្តើម", "sl_stepsSub": "ប្រហែល 10–15 នាទី។ អ្នកអាចឈប់ ហើយបន្តពេលក្រោយបាន។",
-		"sl_s1T": "ចុះឈ្មោះក្នុងរយៈពេលមួយនាទី", "sl_s1B": "ប្រើអ្វីដែលអ្នកមានស្រាប់ — Telegram, Facebook ឬលេខទូរស័ព្ទ។ គណនីនឹងត្រូវបង្កើតដោយស្វ័យប្រវត្តិ។",
+		"sl_s1T": "ចុះឈ្មោះក្នុងរយៈពេលមួយនាទី", "sl_s1B": "ប្រើអ្វីដែលអ្នកមានស្រាប់ — {methods}។ គណនីនឹងត្រូវបង្កើតដោយស្វ័យប្រវត្តិ។",
 		"sl_s2T": "បង្កើតហាងរបស់អ្នក", "sl_s2B": "ឈ្មោះហាង ការពិពណ៌នាខ្លី និងឡូហ្គោ។",
 		"sl_s3T": "ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ", "sl_s3B": "រូបថតអត្តសញ្ញាណប័ណ្ណ ឬលិខិតឆ្លងដែន (ក្រុមហ៊ុន៖ ឯកសារអាជីវកម្ម)។",
 		"sl_s4T": "បន្ថែមទីតាំងទទួលកញ្ចប់", "sl_s4B": "កន្លែងនៅក្រុងព្រះសីហនុ ដែលអ្នកដឹករបស់យើងមកយកការបញ្ជាទិញ។",
 		"sl_s5T": "ផ្ញើឲ្យពិនិត្យ ហើយបន្ថែមផលិតផល", "sl_s5B": "Phsar ពិនិត្យហាងរបស់អ្នក ហើយជូនដំណឹងទៅអ្នក។ ក្នុងពេលនោះ អ្នកអាចរៀបចំផលិតផលបានហើយ។",
 		"sl_prepT": "អ្វីដែលត្រូវរៀបចំ",
-		"sl_p1":    "គណនី Telegram ឬ Facebook ឬលេខទូរស័ព្ទ", "sl_p2": "រូបថតអត្តសញ្ញាណប័ណ្ណ ឬលិខិតឆ្លងដែន", "sl_p3": "គណនីធនាគារក្នុងឈ្មោះរបស់អ្នក ឬឈ្មោះក្រុមហ៊ុន",
+		"sl_p1":    "វិធីចូលមួយ៖ {methods}", "sl_p2": "រូបថតអត្តសញ្ញាណប័ណ្ណ ឬលិខិតឆ្លងដែន", "sl_p3": "គណនីធនាគារក្នុងឈ្មោះរបស់អ្នក ឬឈ្មោះក្រុមហ៊ុន",
 		"sl_p4": "យ៉ាងតិច 3 រូបថតក្នុងមួយផលិតផល — ណែនាំឲ្យមានវីដេអូខ្លី", "sl_p5": "អាសយដ្ឋានទទួលកញ្ចប់នៅក្រុងព្រះសីហនុ",
 		"sl_p6":   "ក្រុមហ៊ុន៖ ការចុះបញ្ជីអាជីវកម្ម និងលេខអត្តសញ្ញាណកម្មសារពើពន្ធ (បុគ្គលគ្មាន TIN ក៏អាចលក់បាន)",
 		"sl_faqT": "សំណួរ",
@@ -100,6 +128,7 @@ var sellStrs = map[string]map[string]string{
 		"sl_endT": "រួចរាល់ហើយឬនៅ?", "sl_endB": "ចុះឈ្មោះក្នុងរយៈពេលមួយនាទី — ហាងរបស់អ្នកអាចរួចរាល់នៅថ្ងៃនេះ។",
 	},
 	"zh": {
+		"sl_phone": "手机号", "sl_or": "或",
 		"sl_title": "在 Phsar 开店", "sl_badge": "面向西哈努克港的商家",
 		"sl_hero": "在 Phsar 免费开店", "sl_heroSub": "用照片和短视频触达西哈努克港的买家。买家先付款，我们的快递员上门取件，货款直接打到你的银行账户。",
 		"sl_cta": "注册成为卖家", "sl_ctaSub": "已经是卖家？同一个按钮即可登录。",
@@ -112,13 +141,13 @@ var sellStrs = map[string]map[string]string{
 		"sl_w5T": "货款打到银行", "sl_w5B": "你的收入按结算周期转入你的银行账户。",
 		"sl_w6T": "写一次，三种语言", "sl_w6B": "用一种语言填写商品信息——Phsar 自动翻译成高棉语、英语和中文。",
 		"sl_stepsT": "如何开始", "sl_stepsSub": "大约 10–15 分钟，可以随时暂停稍后继续。",
-		"sl_s1T": "一分钟完成注册", "sl_s1B": "用你已有的方式——Telegram、Facebook 或手机号，账户会自动创建。",
+		"sl_s1T": "一分钟完成注册", "sl_s1B": "用你已有的方式——{methods}，账户会自动创建。",
 		"sl_s2T": "创建店铺", "sl_s2B": "店铺名称、简短介绍和标志。",
 		"sl_s3T": "身份验证", "sl_s3B": "身份证或护照照片（公司：营业文件）。",
 		"sl_s4T": "添加取件点", "sl_s4B": "快递员在西哈努克港收取你订单的地点。",
 		"sl_s5T": "提交审核，上架商品", "sl_s5B": "Phsar 审核你的店铺并通过通知告诉你。在此期间你已经可以准备商品。",
 		"sl_prepT": "需要准备什么",
-		"sl_p1":    "Telegram 或 Facebook 账号，或手机号", "sl_p2": "身份证或护照照片", "sl_p3": "本人或公司名下的银行账户",
+		"sl_p1":    "任一登录方式：{methods}", "sl_p2": "身份证或护照照片", "sl_p3": "本人或公司名下的银行账户",
 		"sl_p4": "每件商品至少 3 张照片——建议加一段短视频", "sl_p5": "你在西哈努克港的取件地址",
 		"sl_p6":   "公司：营业执照和税号 TIN（没有 TIN 的个人也可以开店）",
 		"sl_faqT": "常见问题",

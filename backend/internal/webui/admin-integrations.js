@@ -1,5 +1,5 @@
 'use strict';
-// Super admin: provider SMS (kode OTP via PlasGate) dan Login Facebook. Rahasia terenkripsi di server, tidak pernah tampil lagi.
+// Super admin: provider SMS (kode OTP via PlasGate), Login Google, Login Facebook, Sign in with Apple (aplikasi). Rahasia terenkripsi di server, tidak pernah tampil lagi.
 addStrings({
   en: {i_logins: 'Login & SMS', lgDesc: 'Only super admins. Keys are encrypted on the server and never shown again — only the last 4 characters.',
     lgSMS: 'SMS login (OTP codes)', lgSMSActive: 'SMS', lgFB: 'Facebook login', lgSrc: 'Settings from', lgOn: 'On', lgOff: 'Off',
@@ -13,6 +13,11 @@ addStrings({
     lgFBEnable: 'Show “Continue with Facebook” on sign-in pages', lgAppID: 'App ID', lgAppSecret: 'App Secret',
     lgAppKeep: 'Saved — ends with {h}. Leave empty to keep.', lgAppNew: 'Facebook Developers → your app → Settings → Basic',
     lgRedirects: 'Valid OAuth Redirect URIs — add all of these in Facebook Login → Settings', lgSaveFB: 'Save Facebook settings', lgTestFB: 'Test App ID & Secret',
+    lgGG: 'Google login', lgGGEnable: 'Show “Continue with Google” on sign-in pages', lgGGID: 'Client ID (Web application)', lgGGSecret: 'Client Secret',
+    lgGGNew: 'Google Cloud → APIs & Services → Credentials → OAuth client ID', lgGGApps: 'App client IDs (Android / iOS, optional)', lgGGAppsHint: 'For the Flutter app later — one per line.',
+    lgGGRedirects: 'Authorized redirect URIs — add all of these in the OAuth client', lgGGOrigins: 'Authorized JavaScript origins', lgSaveGG: 'Save Google settings', lgTestGG: 'Test Client ID & Secret',
+    lgAP: 'Sign in with Apple — iPhone app (later)', lgAPNote: 'Only for the iPhone app. There is no Apple button on the website. Turn it on when the Flutter app is ready and an Apple Developer account exists.',
+    lgAPEnable: 'Allow Sign in with Apple in the iPhone app', lgAPIDs: 'Bundle ID of the iPhone app', lgSaveAP: 'Save Apple settings',
     lgVerified: 'Verified {d}', lgNotTested: 'Not tested yet', lgFailed: 'Last test failed', lgSaved: 'Saved', lgTesting: 'Testing…'},
   km: {i_logins: 'ការចូល និង SMS', lgDesc: 'សម្រាប់អ្នកគ្រប់គ្រងកំពូលប៉ុណ្ណោះ។ កូនសោត្រូវបានអ៊ិនគ្រីប ហើយមិនបង្ហាញម្តងទៀតទេ — មានតែ 4 តួចុងក្រោយ។',
     lgSMS: 'ការចូលតាម SMS (លេខកូដ OTP)', lgSMSActive: 'SMS', lgFB: 'ការចូលតាម Facebook', lgSrc: 'ការកំណត់ពី', lgOn: 'បើក', lgOff: 'បិទ',
@@ -26,6 +31,11 @@ addStrings({
     lgFBEnable: 'បង្ហាញ «បន្តជាមួយ Facebook» នៅទំព័រចូល', lgAppID: 'App ID', lgAppSecret: 'App Secret',
     lgAppKeep: 'បានរក្សាទុក — បញ្ចប់ដោយ {h}។ ទុកទទេដើម្បីរក្សាដដែល។', lgAppNew: 'Facebook Developers → កម្មវិធី → Settings → Basic',
     lgRedirects: 'Valid OAuth Redirect URIs — បន្ថែមទាំងអស់នេះក្នុង Facebook Login → Settings', lgSaveFB: 'រក្សាទុកការកំណត់ Facebook', lgTestFB: 'សាកល្បង App ID និង Secret',
+    lgGG: 'ការចូលតាម Google', lgGGEnable: 'បង្ហាញ «បន្តជាមួយ Google» នៅទំព័រចូល', lgGGID: 'Client ID (Web application)', lgGGSecret: 'Client Secret',
+    lgGGNew: 'Google Cloud → APIs & Services → Credentials → OAuth client ID', lgGGApps: 'Client ID កម្មវិធី (Android / iOS ស្រេចចិត្ត)', lgGGAppsHint: 'សម្រាប់កម្មវិធី Flutter ពេលក្រោយ — មួយបន្ទាត់មួយ។',
+    lgGGRedirects: 'Authorized redirect URIs — បន្ថែមទាំងអស់នេះក្នុង OAuth client', lgGGOrigins: 'Authorized JavaScript origins', lgSaveGG: 'រក្សាទុកការកំណត់ Google', lgTestGG: 'សាកល្បង Client ID និង Secret',
+    lgAP: 'Sign in with Apple — កម្មវិធី iPhone (ពេលក្រោយ)', lgAPNote: 'សម្រាប់តែកម្មវិធី iPhone ប៉ុណ្ណោះ។ គ្មានប៊ូតុង Apple នៅលើគេហទំព័រទេ។ បើកពេលកម្មវិធី Flutter រួចរាល់ និងមានគណនី Apple Developer។',
+    lgAPEnable: 'អនុញ្ញាត Sign in with Apple ក្នុងកម្មវិធី iPhone', lgAPIDs: 'Bundle ID របស់កម្មវិធី iPhone', lgSaveAP: 'រក្សាទុកការកំណត់ Apple',
     lgVerified: 'បានផ្ទៀងផ្ទាត់ {d}', lgNotTested: 'មិនទាន់សាកល្បង', lgFailed: 'ការសាកល្បងចុងក្រោយបរាជ័យ', lgSaved: 'បានរក្សាទុក', lgTesting: 'កំពុងសាកល្បង…'},
   zh: {i_logins: '登录与短信', lgDesc: '仅限超级管理员。密钥在服务器上加密保存，保存后不再显示——只显示最后 4 位。',
     lgSMS: '短信登录（验证码）', lgSMSActive: '短信', lgFB: 'Facebook 登录', lgSrc: '设置来源', lgOn: '开启', lgOff: '关闭',
@@ -39,6 +49,11 @@ addStrings({
     lgFBEnable: '在登录页显示“使用 Facebook 继续”', lgAppID: 'App ID', lgAppSecret: 'App Secret',
     lgAppKeep: '已保存——以 {h} 结尾。留空则保持不变。', lgAppNew: 'Facebook Developers → 应用 → Settings → Basic',
     lgRedirects: 'Valid OAuth Redirect URIs——请在 Facebook Login → Settings 中全部添加', lgSaveFB: '保存 Facebook 设置', lgTestFB: '测试 App ID 和 Secret',
+    lgGG: 'Google 登录', lgGGEnable: '在登录页显示“使用 Google 继续”', lgGGID: 'Client ID（Web application）', lgGGSecret: 'Client Secret',
+    lgGGNew: 'Google Cloud → APIs & Services → Credentials → OAuth client ID', lgGGApps: 'App Client ID（Android / iOS，可选）', lgGGAppsHint: '供以后的 Flutter App 使用——每行一个。',
+    lgGGRedirects: 'Authorized redirect URIs——请在 OAuth client 中全部添加', lgGGOrigins: 'Authorized JavaScript origins', lgSaveGG: '保存 Google 设置', lgTestGG: '测试 Client ID 和 Secret',
+    lgAP: 'Sign in with Apple——iPhone App（以后）', lgAPNote: '仅用于 iPhone App，网站上没有 Apple 按钮。等 Flutter App 完成并有 Apple Developer 账号后再开启。',
+    lgAPEnable: '允许在 iPhone App 中使用 Sign in with Apple', lgAPIDs: 'iPhone App 的 Bundle ID', lgSaveAP: '保存 Apple 设置',
     lgVerified: '已验证 {d}', lgNotTested: '尚未测试', lgFailed: '上次测试失败', lgSaved: '已保存', lgTesting: '正在测试…'},
 });
 
@@ -54,7 +69,7 @@ function lgConn(x) {
 }
 
 function drawLogins() {
-  const d = LG.data, s = d.sms, f = d.facebook;
+  const d = LG.data, s = d.sms, f = d.facebook, g = d.google, ap = d.apple;
   const modes = [['off', 'lgModeOff', 'lgModeOffSub'], ['plasgate', 'lgModePG', 'lgModePGSub']].concat(d.production ? [] : [['log', 'lgModeLog', 'lgModeLogSub']]);
   const radio = ([v, l, sub]) => `<label class="opt"><input type="radio" name="lgMode" value="${v}" ${s.mode === v ? 'checked' : ''}><span><b>${t(l)}</b><small class="muted">${t(sub)}</small></span></label>`;
   const code = id => `<label>${t('gwCode')}<input id="${id}" name="mfa_code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="123456" style="max-width:180px"></label>`;
@@ -64,6 +79,7 @@ function drawLogins() {
     <div class="kpis">
       <div class="kpi"><span>${t('lgSMSActive')}</span><b style="font-size:20px">${esc(smsLabel)}</b></div>
       <div class="kpi"><span>${t('lgSrc')}</span><b style="font-size:20px">${t(s.source === 'admin' ? 'gwSrcAdmin' : 'gwSrcEnv')}</b></div>
+      <div class="kpi"><span>${t('lgGG')}</span><b style="font-size:20px">${t(g.active ? 'lgOn' : 'lgOff')}</b></div>
       <div class="kpi"><span>${t('lgFB')}</span><b style="font-size:20px">${t(f.active ? 'lgOn' : 'lgOff')}</b></div>
     </div>
     <section class="panel" id="lgSMSForm"><div class="ph"><h2>${t('lgSMS')}</h2>${s.key_set ? `<span class="chip ${s.verified_at ? 'ok' : 'warn'}">${esc(lgConn(s))}</span>` : ''}</div>
@@ -84,6 +100,25 @@ function drawLogins() {
           <button type="button" id="lgTestSMS">${t('lgTestSMS')}</button><span class="muted small">${t('lgTestCost')}</span></div>` : ''}
         ${result(s.last_test)}
       </div></section>
+    <section class="panel" id="lgGGForm"><div class="ph"><h2>${t('lgGG')}</h2>${g.key_set ? `<span class="chip ${g.verified_at ? 'ok' : 'warn'}">${esc(lgConn(g))}</span>` : ''}</div>
+      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px">
+        <label class="opt" style="flex-direction:row;align-items:center"><input type="checkbox" id="lgGGOn" ${g.enabled ? 'checked' : ''} style="width:18px;height:18px;min-height:0;flex:none;accent-color:var(--pink)"><span><b>${t('lgGGEnable')}</b></span></label>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px">
+          <label>${t('lgGGID')}<input id="lgGGID" name="client_id" spellcheck="false" value="${esc(g.client_id || '')}" placeholder="1234567890-abc….apps.googleusercontent.com"></label>
+          <label>${t('lgGGSecret')}<input id="lgGGSecret" name="client_secret" type="password" autocomplete="new-password" spellcheck="false" placeholder="${esc(g.key_set ? t('lgAppKeep', {h: '…' + g.key_hint}) : t('lgGGNew'))}"></label>
+        </div>
+        <label>${t('lgGGApps')}<textarea id="lgGGApps" name="app_client_ids" rows="2" spellcheck="false">${esc((g.app_client_ids || '').split(',').filter(Boolean).join('\n'))}</textarea><small class="muted" style="font-weight:400">${t('lgGGAppsHint')}</small></label>
+        <div><span class="muted small">${t('lgGGRedirects')}</span>
+          <ul style="margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${g.redirect_uris.map(u => `<li><code style="overflow-wrap:anywhere">${esc(u)}</code></li>`).join('')}</ul>
+          <span class="muted small" style="display:block;margin-top:8px">${t('lgGGOrigins')}</span>
+          <ul style="margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px">${g.origins.map(u => `<li><code style="overflow-wrap:anywhere">${esc(u)}</code></li>`).join('')}</ul>
+          <button type="button" id="lgCopyGG" style="margin-top:8px">${t('copy')}</button></div>
+        ${result(g.last_test)}
+        <p class="muted small">${t('gwCodeHint')}</p>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">${code('lgCode3')}
+          <button class="primary" id="lgSaveGG" type="button">${t('lgSaveGG')}</button>
+          <button type="button" id="lgTestGG" ${g.key_set ? '' : 'disabled'}>${t('lgTestGG')}</button></div>
+      </div></section>
     <section class="panel" id="lgFBForm"><div class="ph"><h2>${t('lgFB')}</h2>${f.key_set ? `<span class="chip ${f.verified_at ? 'ok' : 'warn'}">${esc(lgConn(f))}</span>` : ''}</div>
       <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px">
         <label class="opt" style="flex-direction:row;align-items:center"><input type="checkbox" id="lgFBOn" ${f.enabled ? 'checked' : ''} style="width:18px;height:18px;min-height:0;flex:none;accent-color:var(--pink)"><span><b>${t('lgFBEnable')}</b></span></label>
@@ -99,7 +134,15 @@ function drawLogins() {
         <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">${code('lgCode2')}
           <button class="primary" id="lgSaveFB" type="button">${t('lgSaveFB')}</button>
           <button type="button" id="lgTestFB" ${f.key_set ? '' : 'disabled'}>${t('lgTestFB')}</button></div>
-      </div></section>`);
+      </div></section>
+    <details class="panel" id="lgAPForm" ${ap.enabled ? 'open' : ''}><summary class="ph" style="cursor:pointer"><h2>${t('lgAP')}</h2><span class="chip ${ap.active ? 'ok' : ''}">${t(ap.active ? 'lgOn' : 'lgOff')}</span></summary>
+      <div style="padding:16px 18px;display:flex;flex-direction:column;gap:14px">
+        <p class="muted small">${t('lgAPNote')}</p>
+        <label class="opt" style="flex-direction:row;align-items:center"><input type="checkbox" id="lgAPOn" ${ap.enabled ? 'checked' : ''} style="width:18px;height:18px;min-height:0;flex:none;accent-color:var(--pink)"><span><b>${t('lgAPEnable')}</b></span></label>
+        <label>${t('lgAPIDs')}<input id="lgAPIDs" name="bundle_ids" spellcheck="false" value="${esc(ap.bundle_ids || '')}" placeholder="com.phsar.app" style="max-width:360px"></label>
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">${code('lgCode4')}
+          <button class="primary" id="lgSaveAP" type="button">${t('lgSaveAP')}</button></div>
+      </div></details>`);
 
   const fail = (e, form) => {
     if (e.field) { const el = $(`#${form} [name="${e.field}"]`); if (el) { el.classList.add('invalid'); el.focus(); } }
@@ -130,5 +173,22 @@ function drawLogins() {
     const b = $('#lgTestFB'); b.disabled = true; b.textContent = t('lgTesting');
     try { await api('/admin/api/integrations/facebook/test', {method: 'POST'}); LG.data = await api('/admin/api/integrations'); drawLogins(); }
     catch (e) { toast(errMsg(e), 'error'); b.disabled = false; b.textContent = t('lgTestFB'); }
+  };
+  $('#lgCopyGG').onclick = async () => { try { await navigator.clipboard.writeText(g.redirect_uris.concat(g.origins).join('\n')); toast(t('copied')); } catch {} };
+  $('#lgSaveGG').onclick = async () => {
+    clear('lgGGForm');
+    const body = {enabled: $('#lgGGOn').checked, client_id: $('#lgGGID').value.trim(), app_client_ids: $('#lgGGApps').value, mfa_code: $('#lgCode3').value};
+    if ($('#lgGGSecret').value.trim()) body.client_secret = $('#lgGGSecret').value.trim();
+    try { LG.data = await api('/admin/api/integrations/google', {method: 'PUT', body}); toast(t('lgSaved')); drawLogins(); } catch (e) { fail(e, 'lgGGForm'); }
+  };
+  $('#lgTestGG').onclick = async () => {
+    const b = $('#lgTestGG'); b.disabled = true; b.textContent = t('lgTesting');
+    try { await api('/admin/api/integrations/google/test', {method: 'POST'}); LG.data = await api('/admin/api/integrations'); drawLogins(); }
+    catch (e) { toast(errMsg(e), 'error'); b.disabled = false; b.textContent = t('lgTestGG'); }
+  };
+  $('#lgSaveAP').onclick = async () => {
+    clear('lgAPForm');
+    const body = {enabled: $('#lgAPOn').checked, bundle_ids: $('#lgAPIDs').value.trim(), mfa_code: $('#lgCode4').value};
+    try { LG.data = await api('/admin/api/integrations/apple', {method: 'PUT', body}); toast(t('lgSaved')); drawLogins(); } catch (e) { fail(e, 'lgAPForm'); }
   };
 }

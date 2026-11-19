@@ -33,7 +33,7 @@ type Handler struct {
 	Delivery *DeliveryRoutes // kurir & pengantaran
 	Payouts  *PayoutRoutes   // payout seller
 	Payments *PaymentRoutes  // payment gateway (super admin)
-	// Integrations: provider SMS & Login Facebook (super admin)
+	// Integrations: provider SMS & Login Facebook / Google / Apple (super admin)
 	Integrations *IntegrationRoutes
 	Legal        *LegalRoutes // dokumen legal & kontak (super admin)
 	Returns      *ReturnRoutes
@@ -126,6 +126,9 @@ func (h *Handler) Routes() http.Handler {
 			p.Post("/sms/test", h.integrationsTestSMS)
 			p.Put("/facebook", h.integrationsSaveFacebook)
 			p.Post("/facebook/test", h.integrationsTestFacebook)
+			p.Put("/google", h.integrationsSaveGoogle)
+			p.Post("/google/test", h.integrationsTestGoogle)
+			p.Put("/apple", h.integrationsSaveApple)
 			p.Put("/ai", h.integrationsSaveAI) // AI: Anthropic utama, Gemini cadangan
 			p.Post("/ai/test", h.integrationsTestAI)
 			p.Put("/maps", h.integrationsSaveMaps)

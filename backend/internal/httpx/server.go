@@ -98,6 +98,8 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 	logins := NewIntegrations(cfg, log, pool)
 	authSvc.UseSMSGateway(logins)
 	authSvc.UseFacebook(logins)
+	authSvc.UseGoogle(logins)
+	authSvc.UseApple(logins) // hanya aplikasi iPhone (tidak ada tombol di website)
 
 	meta := catalogmeta.New(pool)
 	tourH := &tour.Handler{Pool: pool, Log: log} // tour: status "tur cara pakai sudah dilihat"
@@ -204,7 +206,7 @@ func NewRouter(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool, authSvc 
 
 	// Seller Center web
 	r.Get("/ui/config.js", webui.ConfigJS(logins.Maps, func(ctx context.Context) map[string]bool {
-		return map[string]bool{"telegram": cfg.TelegramMode != "off", "sms": authSvc.SMSEnabled(ctx), "facebook": authSvc.FacebookEnabled(ctx)}
+		return map[string]bool{"telegram": cfg.TelegramMode != "off", "sms": authSvc.SMSEnabled(ctx), "facebook": authSvc.FacebookEnabled(ctx), "google": authSvc.GoogleEnabled(ctx)}
 	}))
 	r.Handle("/ui/*", webui.Assets())
 	r.Route("/seller", func(r chi.Router) {
@@ -372,7 +374,7 @@ func NewIntegrations(cfg config.Config, log *slog.Logger, pool *pgxpool.Pool) *i
 	if err != nil {
 		panic(err)
 	}
-	return &integ.Store{Pool: pool, Box: box, Log: log, Def: integ.Defaults{Env: cfg.Env, SMSProvider: cfg.SMSProvider, BaseURL: cfg.PublicBaseURL,
+	return &integ.Store{Pool: pool, Box: box, Log: log, Def: integ.Defaults{Env: cfg.Env, SMSProvider: cfg.SMSProvider, BaseURL: cfg.PublicBaseURL, SellerURL: cfg.SellerBaseURL, AdminURL: cfg.AdminBaseURL,
 		AnthropicKey: cfg.AnthropicKey, AnthropicModel: cfg.AnthropicModel, GeminiKey: cfg.GeminiKey, GeminiModel: cfg.GeminiModel,
 		MapsKey: cfg.GoogleMapsKey, MapsMapID: cfg.GoogleMapsMapID,
 		TelegramSet: cfg.TelegramBotToken != "", TelegramUsername: cfg.TelegramBotUsername}}

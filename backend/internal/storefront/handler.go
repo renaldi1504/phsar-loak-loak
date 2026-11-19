@@ -37,6 +37,7 @@ var files embed.FS
 type LoginState interface {
 	SMSEnabled(ctx context.Context) bool
 	FacebookEnabled(ctx context.Context) bool
+	GoogleEnabled(ctx context.Context) bool
 }
 
 // PaymentState: status payment gateway saat ini (paygw.Store).
@@ -554,7 +555,7 @@ func (h *Handler) store(w http.ResponseWriter, r *http.Request, p *Page) (string
 type shopData struct {
 	Mode, OrderNo       string
 	TelegramLogin, Test bool
-	SMS, Closed, FB     bool
+	SMS, Closed, FB, GG bool
 }
 
 // shopPage: keranjang, checkout, pesanan — kerangka HTML; isinya dirender shop.js (data milik pembeli, tidak di-cache).
@@ -566,7 +567,7 @@ func (h *Handler) shopPage(mode string) handlerFunc {
 			p.Active = "orders"
 		}
 		w.Header().Set("Cache-Control", "no-store")
-		p.Data = shopData{Mode: mode, OrderNo: chi.URLParam(r, "no"), TelegramLogin: h.TelegramLogin, Test: h.Payments != nil && h.Payments.Test(r.Context()), SMS: h.Logins != nil && h.Logins.SMSEnabled(r.Context()), FB: h.Logins != nil && h.Logins.FacebookEnabled(r.Context()), Closed: h.prelaunch(r.Context())}
+		p.Data = shopData{Mode: mode, OrderNo: chi.URLParam(r, "no"), TelegramLogin: h.TelegramLogin, Test: h.Payments != nil && h.Payments.Test(r.Context()), SMS: h.Logins != nil && h.Logins.SMSEnabled(r.Context()), FB: h.Logins != nil && h.Logins.FacebookEnabled(r.Context()), GG: h.Logins != nil && h.Logins.GoogleEnabled(r.Context()), Closed: h.prelaunch(r.Context())}
 		return "shop", http.StatusOK, nil
 	}
 }

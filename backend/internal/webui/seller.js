@@ -74,13 +74,13 @@ const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
 // Daftar / masuk Seller Center: login = daftar (nomor baru otomatis dibuatkan akun) + peta langkah menjadi seller.
 addStrings({
   en: {jnLogin: 'Register or sign in', jnLoginSub: 'New here? Choose any sign-in below — your account is created automatically. Already a seller? Sign in the same way.',
-    jnTitle: 'Become a seller in 5 steps', jn1: 'Sign up (Telegram, Facebook or phone)', jn2: 'Create your store', jn3: 'Verify your identity (KYC)', jn4: 'Add your pickup point', jn5: 'Send for review — then add products',
+    jnTitle: 'Become a seller in 5 steps', jn1: 'Sign up — takes a minute', jn2: 'Create your store', jn3: 'Verify your identity (KYC)', jn4: 'Add your pickup point', jn5: 'Send for review — then add products',
     jnFree: 'Free to open. Commission only when you sell.', jnMore: 'Learn more about selling on Phsar', jnStep: 'Step {a} of {b}', jnWelcome: 'Welcome! Let’s set up your store.'},
   km: {jnLogin: 'ចុះឈ្មោះ ឬចូលគណនី', jnLoginSub: 'ថ្មីនៅទីនេះ? ជ្រើសរើសវិធីចូលណាមួយខាងក្រោម — គណនីនឹងត្រូវបង្កើតដោយស្វ័យប្រវត្តិ។ ជាអ្នកលក់រួចហើយ? ចូលតាមរបៀបដដែល។',
-    jnTitle: 'ក្លាយជាអ្នកលក់ក្នុង 5 ជំហាន', jn1: 'ចុះឈ្មោះ (Telegram, Facebook ឬលេខទូរស័ព្ទ)', jn2: 'បង្កើតហាងរបស់អ្នក', jn3: 'ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ (KYC)', jn4: 'បន្ថែមទីតាំងទទួលកញ្ចប់', jn5: 'ផ្ញើឲ្យពិនិត្យ — រួចបន្ថែមផលិតផល',
+    jnTitle: 'ក្លាយជាអ្នកលក់ក្នុង 5 ជំហាន', jn1: 'ចុះឈ្មោះ — ប្រើពេលមួយនាទី', jn2: 'បង្កើតហាងរបស់អ្នក', jn3: 'ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ (KYC)', jn4: 'បន្ថែមទីតាំងទទួលកញ្ចប់', jn5: 'ផ្ញើឲ្យពិនិត្យ — រួចបន្ថែមផលិតផល',
     jnFree: 'បើកហាងឥតគិតថ្លៃ។ បង់កម្រៃជើងសារតែពេលលក់ដាច់។', jnMore: 'ស្វែងយល់បន្ថែមអំពីការលក់លើ Phsar', jnStep: 'ជំហាន {a} នៃ {b}', jnWelcome: 'សូមស្វាគមន៍! តោះរៀបចំហាងរបស់អ្នក។'},
   zh: {jnLogin: '注册或登录', jnLoginSub: '第一次来？选择下面任一登录方式，账户会自动创建。已经是卖家？用同样的方式登录。',
-    jnTitle: '5 步成为卖家', jn1: '注册（Telegram、Facebook 或手机号）', jn2: '创建店铺', jn3: '身份验证 (KYC)', jn4: '添加取件点', jn5: '提交审核，然后上架商品',
+    jnTitle: '5 步成为卖家', jn1: '注册——一分钟搞定', jn2: '创建店铺', jn3: '身份验证 (KYC)', jn4: '添加取件点', jn5: '提交审核，然后上架商品',
     jnFree: '免费开店，成交才收佣金。', jnMore: '了解更多在 Phsar 开店的信息', jnStep: '第 {a} 步，共 {b} 步', jnWelcome: '欢迎！我们来设置你的店铺。'},
 });
 // journey: daftar 5 langkah; langkah < active = selesai, = active = sekarang.

@@ -19,6 +19,9 @@ func TestSellPage(t *testing.T) {
 	e.sql(t, `INSERT INTO commission_rules (scope, rate_percent, valid_from) VALUES ('global', 6.5, now())`)
 	defer e.sql(t, `DELETE FROM commission_rules WHERE scope = 'global' AND rate_percent = 6.5`)
 	check(t, strings.Contains(string(e.call(t, "GET", "/en/sell", nil, "").want(200).Raw), "Only 6.5% when you sell"), "tarif komisi admin tidak dipakai")
+	// cara daftar mengikuti pengaturan login (SMS selalu ada di server tes; Google/Facebook bisa masih aktif dari tes lain karena cache 15 detik)
+	check(t, strings.Contains(string(e.call(t, "GET", "/en/sell", nil, "").want(200).Raw), "or your phone number. Your account") ||
+		strings.Contains(string(e.call(t, "GET", "/en/sell", nil, "").want(200).Raw), "have — your phone number. Your account"), "cara daftar yang aktif tidak tampil")
 	// footer setiap halaman mengarah ke /sell
 	check(t, strings.Contains(string(e.call(t, "GET", "/km/", nil, "").want(200).Raw), `href="/km/sell"`), "link Jual di Phsar di footer")
 	check(t, strings.Contains(string(e.call(t, "GET", "/sitemap.xml", nil, "").want(200).Raw), "/en/sell"), "sitemap memuat /sell")

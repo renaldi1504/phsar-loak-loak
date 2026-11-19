@@ -92,6 +92,38 @@ func (h *Handler) integrationsSaveFacebook(w http.ResponseWriter, r *http.Reques
 	h.integrationsReply(w, r, h.Integrations.Store.SaveFacebook(r.Context(), actor(r), in.FacebookInput))
 }
 
+func (h *Handler) integrationsSaveGoogle(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		integ.GoogleInput
+		MFACode string `json:"mfa_code"`
+	}
+	if !decode(w, r, &in) || !stepUp(w, r, in.MFACode, h.Integrations.ConfirmMFA) {
+		return
+	}
+	h.integrationsReply(w, r, h.Integrations.Store.SaveGoogle(r.Context(), actor(r), in.GoogleInput))
+}
+
+func (h *Handler) integrationsTestGoogle(w http.ResponseWriter, r *http.Request) {
+	res, err := h.Integrations.Store.TestGoogle(r.Context(), actor(r))
+	if err != nil {
+		h.integrationsReply(w, r, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, res)
+}
+
+// Sign in with Apple (aplikasi iPhone): hanya Bundle ID, tanpa rahasia.
+func (h *Handler) integrationsSaveApple(w http.ResponseWriter, r *http.Request) {
+	var in struct {
+		integ.AppleInput
+		MFACode string `json:"mfa_code"`
+	}
+	if !decode(w, r, &in) || !stepUp(w, r, in.MFACode, h.Integrations.ConfirmMFA) {
+		return
+	}
+	h.integrationsReply(w, r, h.Integrations.Store.SaveApple(r.Context(), actor(r), in.AppleInput))
+}
+
 // POST /integrations/sms/test {phone} — kirim SMS uji (biaya 1 SMS) ke nomor yang diketik admin.
 func (h *Handler) integrationsTestSMS(w http.ResponseWriter, r *http.Request) {
 	var in struct {

@@ -103,6 +103,9 @@ func (s *Service) CookieRoutes(audience, cookieName, cookiePath string) http.Han
 	// Login Facebook (redirect, bukan fetch — tidak bisa membawa header X-Phsar; dilindungi state acak di cookie).
 	r.Get("/facebook/start", func(w http.ResponseWriter, r *http.Request) { s.facebookStart(w, r, cookiePath) })
 	r.Get("/facebook/callback", func(w http.ResponseWriter, r *http.Request) { s.facebookCallback(w, r, cookiePath, audience, set) })
+	// Login Google (sama: redirect + state di cookie).
+	r.Get("/google/start", func(w http.ResponseWriter, r *http.Request) { s.googleStart(w, r, cookiePath) })
+	r.Get("/google/callback", func(w http.ResponseWriter, r *http.Request) { s.googleCallback(w, r, cookiePath, audience, set) })
 	// Checkout sebagai tamu — hanya website pembeli.
 	if cookiePath == "/shop/auth" {
 		r.Post("/guest", guard(func(w http.ResponseWriter, r *http.Request) {

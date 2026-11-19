@@ -93,7 +93,7 @@ func (s *Service) facebookStart(w http.ResponseWriter, r *http.Request, cookiePa
 	http.SetCookie(w, &http.Cookie{Name: fbStateCookie, Value: state + "|" + url.QueryEscape(ret), Path: cookiePath + "/facebook",
 		MaxAge: 600, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: s.secureCookies()})
 	dialog, _ := s.fb.FacebookURLs()
-	q := url.Values{"client_id": {appID}, "redirect_uri": {s.cfg.PublicBaseURL + cookiePath + "/facebook/callback"},
+	q := url.Values{"client_id": {appID}, "redirect_uri": {s.authBase(cookiePath) + cookiePath + "/facebook/callback"},
 		"state": {state}, "response_type": {"code"}, "scope": {"public_profile"}}
 	http.Redirect(w, r, dialog+"?"+q.Encode(), http.StatusFound)
 }
@@ -119,7 +119,7 @@ func (s *Service) facebookCallback(w http.ResponseWriter, r *http.Request, cooki
 		return
 	}
 	cl := client(r, "web")
-	token, err := s.facebookExchange(r.Context(), r.URL.Query().Get("code"), s.cfg.PublicBaseURL+cookiePath+"/facebook/callback")
+	token, err := s.facebookExchange(r.Context(), r.URL.Query().Get("code"), s.authBase(cookiePath)+cookiePath+"/facebook/callback")
 	if err != nil {
 		s.log.Warn("facebook: tukar kode gagal", "err", err)
 		http.Redirect(w, r, withQuery(ret, "auth_error", "facebook_failed"), http.StatusFound)

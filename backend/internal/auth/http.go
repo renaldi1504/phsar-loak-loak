@@ -25,6 +25,8 @@ func (s *Service) Routes(audience string) http.Handler {
 	r.Post("/refresh", s.handleRefresh)
 	r.Post("/logout", s.handleLogout)
 	r.Post("/facebook", func(w http.ResponseWriter, r *http.Request) { s.handleFacebookToken(w, r, audience) })
+	r.Post("/google", func(w http.ResponseWriter, r *http.Request) { s.handleGoogleToken(w, r, audience) })
+	r.Post("/apple", func(w http.ResponseWriter, r *http.Request) { s.handleAppleToken(w, r, audience) })
 	if audience == "app" {
 		r.Post("/guest", func(w http.ResponseWriter, r *http.Request) {
 			pair, err := s.GuestSession(r.Context(), string(i18n.From(r.Context())), client(r, r.Header.Get("X-Device-Name")))
@@ -224,6 +226,10 @@ func (s *Service) fail(w http.ResponseWriter, err error) {
 		ErrSMSFailed:          {http.StatusBadGateway, "sms_failed"},
 		ErrFacebookDisabled:   {http.StatusServiceUnavailable, "facebook_disabled"},
 		ErrFacebookFailed:     {http.StatusUnauthorized, "facebook_failed"},
+		ErrGoogleDisabled:     {http.StatusForbidden, "google_disabled"},
+		ErrGoogleFailed:       {http.StatusUnauthorized, "google_failed"},
+		ErrAppleDisabled:      {http.StatusForbidden, "apple_disabled"},
+		ErrAppleFailed:        {http.StatusUnauthorized, "apple_failed"},
 		ErrGuestLimit:         {http.StatusTooManyRequests, "guest_rate_limited"},
 	}
 	for e, v := range table {
