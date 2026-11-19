@@ -245,3 +245,17 @@ dialog.nfdlg{max-width:560px}
 .nfdlg .nf-table th[scope=row],.nfdlg .nf-table thead th:first-child{text-align:left;font-weight:500}
 .nfdlg .nf-table input{width:20px;height:20px}
 .nfdlg .nf-foot{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.nfdlg .grow{flex:1}
+/* Seller Center: daftar / masuk + peta langkah */
+.jn-login{display:grid;grid-template-columns:minmax(0,420px) minmax(0,380px);gap:24px;justify-content:center;align-items:start;margin:40px auto}
+.jn-login .login{margin:0;max-width:none}
+.jn-side{display:flex;flex-direction:column;gap:12px}
+.jn-side h2{font-size:18px}
+.journey{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.journey li{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:#fff;font-size:14px}
+.journey .n{flex:none;width:28px;height:28px;border-radius:50%;background:#f1f2f6;color:var(--navy);font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.journey li.now{border-color:#ffc7d9;background:#fff0f5;font-weight:600}
+.journey li.now .n{background:var(--pink);color:#fff}
+.journey li.done .n{background:#dcfce7;color:#15803d}
+.journey li.done{color:#64748b}
+section.card + .journey,.journey + section.card{margin-top:16px}
+@media (max-width:860px){.jn-login{grid-template-columns:1fr;margin:20px auto;max-width:460px}}

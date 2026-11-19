@@ -2,7 +2,12 @@
 // Refresh token ada di cookie HttpOnly; access token hanya di memori.
 'use strict';
 const P = {
-  lang: (() => { try { return localStorage.getItem('phsar-lang') || 'en'; } catch { return 'en'; } })(),
+  // ?lang=km dari link website (subdomain lain = localStorage lain) menang sekali, lalu diingat.
+  lang: (() => {
+    const q = new URLSearchParams(location.search).get('lang');
+    if (['en', 'km', 'zh'].includes(q)) { try { localStorage.setItem('phsar-lang', q); } catch {} return q; }
+    try { return localStorage.getItem('phsar-lang') || 'en'; } catch { return 'en'; }
+  })(),
   token: null, user: null, authBase: '', T: {},
 };
 

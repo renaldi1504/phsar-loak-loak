@@ -71,6 +71,29 @@ addStrings({
 
 const S = {stores: [], store: null, tab: 'profile', kyc: null, points: [], editing: null, pin: null, map: null, marker: null};
 const DAYS = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+// Daftar / masuk Seller Center: login = daftar (nomor baru otomatis dibuatkan akun) + peta langkah menjadi seller.
+addStrings({
+  en: {jnLogin: 'Register or sign in', jnLoginSub: 'New here? Choose any sign-in below — your account is created automatically. Already a seller? Sign in the same way.',
+    jnTitle: 'Become a seller in 5 steps', jn1: 'Sign up (Telegram, Facebook or phone)', jn2: 'Create your store', jn3: 'Verify your identity (KYC)', jn4: 'Add your pickup point', jn5: 'Send for review — then add products',
+    jnFree: 'Free to open. Commission only when you sell.', jnMore: 'Learn more about selling on Phsar', jnStep: 'Step {a} of {b}', jnWelcome: 'Welcome! Let’s set up your store.'},
+  km: {jnLogin: 'ចុះឈ្មោះ ឬចូលគណនី', jnLoginSub: 'ថ្មីនៅទីនេះ? ជ្រើសរើសវិធីចូលណាមួយខាងក្រោម — គណនីនឹងត្រូវបង្កើតដោយស្វ័យប្រវត្តិ។ ជាអ្នកលក់រួចហើយ? ចូលតាមរបៀបដដែល។',
+    jnTitle: 'ក្លាយជាអ្នកលក់ក្នុង 5 ជំហាន', jn1: 'ចុះឈ្មោះ (Telegram, Facebook ឬលេខទូរស័ព្ទ)', jn2: 'បង្កើតហាងរបស់អ្នក', jn3: 'ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ (KYC)', jn4: 'បន្ថែមទីតាំងទទួលកញ្ចប់', jn5: 'ផ្ញើឲ្យពិនិត្យ — រួចបន្ថែមផលិតផល',
+    jnFree: 'បើកហាងឥតគិតថ្លៃ។ បង់កម្រៃជើងសារតែពេលលក់ដាច់។', jnMore: 'ស្វែងយល់បន្ថែមអំពីការលក់លើ Phsar', jnStep: 'ជំហាន {a} នៃ {b}', jnWelcome: 'សូមស្វាគមន៍! តោះរៀបចំហាងរបស់អ្នក។'},
+  zh: {jnLogin: '注册或登录', jnLoginSub: '第一次来？选择下面任一登录方式，账户会自动创建。已经是卖家？用同样的方式登录。',
+    jnTitle: '5 步成为卖家', jn1: '注册（Telegram、Facebook 或手机号）', jn2: '创建店铺', jn3: '身份验证 (KYC)', jn4: '添加取件点', jn5: '提交审核，然后上架商品',
+    jnFree: '免费开店，成交才收佣金。', jnMore: '了解更多在 Phsar 开店的信息', jnStep: '第 {a} 步，共 {b} 步', jnWelcome: '欢迎！我们来设置你的店铺。'},
+});
+// journey: daftar 5 langkah; langkah < active = selesai, = active = sekarang.
+function journey(active) {
+  return `<ol class="journey">${[1, 2, 3, 4, 5].map(n => `<li class="${n < active ? 'done' : n === active ? 'now' : ''}"${n === active ? ' aria-current="step"' : ''}>
+    <span class="n" aria-hidden="true">${n < active ? '✓' : n}</span><span>${t('jn' + n)}</span></li>`).join('')}</ol>`;
+}
+function sellerLoginView() {
+  return `<div class="jn-login">${loginView(t('jnLogin')).replace(`<p class="muted">${t('loginSub')}</p>`, `<p class="muted">${t('jnLoginSub')}</p>`)}
+    <aside class="card jn-side"><h2>${t('jnTitle')}</h2>${journey(1)}<p class="muted">${t('jnFree')}</p>
+      <a href="/${P.lang}/sell">${t('jnMore')} →</a></aside></div>`;
+}
+
 const statusChip = st => `<span class="chip ${({active: 'ok', pending_review: 'warn', onboarding: 'pink', suspended: 'bad'})[st] || ''}">${t('st_' + st)}</span>`;
 
 function shell(inner) {
@@ -82,7 +105,7 @@ function shell(inner) {
 async function render() {
   const app = $('#app');
   if (!P.token) {
-    app.innerHTML = shell(loginView(t('appName')));
+    app.innerHTML = shell(sellerLoginView());
     // Setelah login, kembali ke halaman yang dibuka (mis. link undangan staf).
     bindLogin(() => { if (!/^#\/invite\//.test(location.hash)) location.hash = '#/'; render(); });
     return;
@@ -114,9 +137,9 @@ async function renderStores() {
   if (S.stores.length === 1 && owns && !S.storesShown) { S.storesShown = true; location.hash = '#/store/' + S.stores[0].id + '/home'; return; }
   $('#app').innerHTML = shell(`
     <h1>${t('myStores')}</h1>
-    ${S.stores.length ? `<div class="grid">${list}</div>` : `<p class="muted">${t('noStores')}</p>`}
+    ${S.stores.length ? `<div class="grid">${list}</div>` : `<p class="muted">${t('jnWelcome')}</p>${owns ? '' : journey(2)}`}
     ${owns ? `<p class="muted">${t('oneStoreRule')}</p>` : `<section class="card" style="max-width:560px">
-      <div><h2>${t('createStore')}</h2><p class="muted">${t('createSub')}</p></div>
+      <div><span class="chip pink">${t('jnStep', {a: 2, b: 5})}</span><h2>${t('createStore')}</h2><p class="muted">${t('createSub')}</p></div>
       <label>${t('storeName')}<input id="cName" maxlength="80"></label>
       <label>${t('storeAbout')}<textarea id="cAbout" maxlength="2000"></textarea></label>
       <label>${t('writtenIn')}<select id="cLang"><option value="km">ខ្មែរ</option><option value="en">English</option><option value="zh">中文</option></select></label>

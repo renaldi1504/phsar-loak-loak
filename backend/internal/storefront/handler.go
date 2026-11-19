@@ -99,6 +99,7 @@ func (h *Handler) Routes(r chi.Router) {
 			r.Get("/s/{slug}", h.wrap(lang, h.store))
 			r.Get("/legal/{slug}", h.wrap(lang, h.legalPage(lang)))
 			r.Get("/contact", h.wrap(lang, h.contactPage(lang)))
+			r.Get("/sell", h.wrap(lang, h.sellPage)) // Jual di Phsar: ajakan untuk calon seller
 			r.Get("/cart", h.wrap(lang, h.shopPage("cart")))
 			r.Get("/checkout", h.wrap(lang, h.shopPage("checkout")))
 			r.Get("/orders", h.wrap(lang, h.shopPage("orders")))
@@ -599,6 +600,11 @@ func (h *Handler) sitemap(w http.ResponseWriter, r *http.Request) {
 		home[l] = "/" + l + "/"
 	}
 	write(home, time.Time{})
+	sell := map[string]string{}
+	for _, l := range langs {
+		sell[l] = "/" + l + "/sell"
+	}
+	write(sell, time.Time{})
 	if h.Legal != nil {
 		for _, slug := range []string{"legal/terms", "legal/privacy", "legal/returns", "legal/seller-terms", "contact"} {
 			ps := map[string]string{}

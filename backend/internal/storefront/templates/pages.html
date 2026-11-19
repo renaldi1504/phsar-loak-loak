@@ -357,3 +357,42 @@ p{margin:0;color:var(--muted)}
   </div>{{else}}<p class="watch-empty">{{.T "watchEmpty"}}</p>{{end}}
 </section>
 {{template "bottom" .}}{{end}}
+
+{{define "sell"}}{{template "top" .}}{{$p := .}}{{$d := .Data}}
+<div class="sell">
+  <section class="sell-hero"><div class="wrap">
+    <span class="sell-badge">{{glyph "store"}} {{.T "sl_badge"}}</span>
+    <h1>{{.T "sl_hero"}}</h1>
+    <p class="sell-lead">{{.T "sl_heroSub"}}</p>
+    <div class="sell-cta"><a class="btn" href="{{$d.SellerURL}}">{{.T "sl_cta"}}</a><small>{{.T "sl_ctaSub"}}</small></div>
+    {{if .Prelaunch}}<p class="sell-soon">{{.T "sl_soon"}}</p>{{end}}
+  </div></section>
+
+  <div class="wrap">
+    <section class="sell-sec" aria-labelledby="slWhy"><h2 id="slWhy">{{.T "sl_whyT"}}</h2>
+      <div class="sell-why">
+        {{range $i, $g := (items "store" "bag" "shield" "truck" "check" "globe")}}{{$n := add $i 1}}
+        <article class="panel"><span class="sell-ico">{{glyph $g}}</span>
+          <h3>{{$p.T (printf "sl_w%dT" $n) "rate" $d.Rate}}</h3><p>{{$p.T (printf "sl_w%dB" $n) "rate" $d.Rate}}</p></article>{{end}}
+      </div>
+    </section>
+
+    <section class="sell-sec" aria-labelledby="slSteps"><h2 id="slSteps">{{.T "sl_stepsT"}}</h2><p class="muted">{{.T "sl_stepsSub"}}</p>
+      <ol class="sell-steps">{{range $n := (items 1 2 3 4 5)}}
+        <li><span class="n" aria-hidden="true">{{$n}}</span><div><b>{{$p.T (printf "sl_s%dT" $n)}}</b><p>{{$p.T (printf "sl_s%dB" $n)}}</p></div></li>{{end}}
+      </ol>
+    </section>
+
+    <div class="sell-two">
+      <section class="panel sell-sec" aria-labelledby="slPrep"><h2 id="slPrep">{{.T "sl_prepT"}}</h2>
+        <ul class="sell-check">{{range $n := (items 1 2 3 4 5 6)}}<li>{{glyph "check"}}<span>{{$p.T (printf "sl_p%d" $n)}}</span></li>{{end}}</ul>
+      </section>
+      <section class="sell-sec" aria-labelledby="slFaq"><h2 id="slFaq">{{.T "sl_faqT"}}</h2>
+        {{range $n := (items 1 2 3 4 5 6)}}<details class="sell-faq"><summary>{{$p.T (printf "sl_q%d" $n)}}</summary><p>{{$p.T (printf "sl_a%d" $n) "rate" $d.Rate}}</p></details>{{end}}
+      </section>
+    </div>
+
+    <section class="sell-end"><h2>{{.T "sl_endT"}}</h2><p>{{.T "sl_endB"}}</p><a class="btn" href="{{$d.SellerURL}}">{{.T "sl_cta"}}</a></section>
+  </div>
+</div>
+{{template "bottom" .}}{{end}}

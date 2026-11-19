@@ -68,7 +68,7 @@
     </div>
   </div>
 </header>
-{{if .Prelaunch}}<div class="prelaunch"><div class="wrap">{{glyph "store"}}<p><b>{{.T "soonTitle"}}</b> <span>{{.T "soonText"}}</span></p><a href="/seller/">{{.T "soonSell"}}</a></div></div>{{end}}
+{{if .Prelaunch}}<div class="prelaunch"><div class="wrap">{{glyph "store"}}<p><b>{{.T "soonTitle"}}</b> <span>{{.T "soonText"}}</span></p><a href="{{.U "/sell"}}">{{.T "soonSell"}}</a></div></div>{{end}}
 <main id="main">
 {{end}}
 
@@ -84,7 +84,7 @@
       {{range .Categories}}<a href="{{$.U "/c/"}}{{.Slug}}">{{.Name}}</a>{{end}}
     </nav>
     <nav aria-label="{{.T "language"}}">
-      <a href="/seller/">{{.T "sell"}}</a>
+      <a href="{{.U "/sell"}}">{{.T "sell"}}</a>
       <a href="{{.U "/legal/terms"}}">{{.T "legal_buyer_terms"}}</a>
       <a href="{{.U "/legal/privacy"}}">{{.T "legal_privacy_policy"}}</a>
       <a href="{{.U "/legal/returns"}}">{{.T "legal_return_policy"}}</a>

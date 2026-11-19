@@ -33,7 +33,7 @@ func TestPrelaunchMode(t *testing.T) {
 	})
 	t.Run("website: pita segera dibuka, keranjang tanpa tombol checkout", func(t *testing.T) {
 		home := pre.call(t, "GET", "/en/", nil, "").want(200)
-		check(t, strings.Contains(string(home.Raw), `class="prelaunch"`) && strings.Contains(string(home.Raw), `href="/seller/"`), "pita pra-peluncuran tidak ada")
+		check(t, strings.Contains(string(home.Raw), `class="prelaunch"`) && strings.Contains(string(home.Raw), `href="/en/sell"`), "pita pra-peluncuran tidak ada")
 		cart := pre.call(t, "GET", "/km/cart", nil, "").want(200)
 		check(t, strings.Contains(string(cart.Raw), `data-closed="true"`) && strings.Contains(string(cart.Raw), `data-sms="false"`), "halaman keranjang tidak tahu checkout ditutup")
 		normal := e.call(t, "GET", "/en/", nil, "").want(200)
