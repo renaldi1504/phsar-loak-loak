@@ -188,6 +188,9 @@ type Store struct {
 	Role        string            `json:"role,omitempty"` // owner · staff (untuk user yang meminta)
 	Checklist   *Checklist        `json:"checklist,omitempty"`
 	Commission  *Commission       `json:"commission,omitempty"` // hanya di GET toko (kalkulator "Anda terima")
+	SKUPrefix   string            `json:"sku_prefix"`           // kode SKU toko, mis. SKV
+	SKUNext     string            `json:"sku_next"`             // SKU otomatis produk berikutnya, mis. SKV-00013 (pratinjau)
+	LowStock    int               `json:"low_stock_threshold"`  // ambang stok menipis (bawaan 3)
 	CreatedAt   time.Time         `json:"created_at"`
 }
 
@@ -206,10 +209,13 @@ func (s *Service) GetStore(ctx context.Context, storeID string) (Store, error) {
 	var st Store
 	var note, logo, banner *string
 	var social []byte
+	var prefix *string
+	var nextNo int
 	err := s.pool.QueryRow(ctx, `
-		SELECT id, slug, name, status::text, review_note, logo_key, banner_key, social_links, created_at
+		SELECT id, slug, name, status::text, review_note, logo_key, banner_key, social_links, created_at,
+		       sku_prefix, low_stock_threshold, coalesce((SELECT last_no FROM store_sku_counters c WHERE c.store_id = stores.id), 0) + 1
 		FROM stores WHERE id = $1 AND deleted_at IS NULL`, storeID).
-		Scan(&st.ID, &st.Slug, &st.Name, &st.Status, &note, &logo, &banner, &social, &st.CreatedAt)
+		Scan(&st.ID, &st.Slug, &st.Name, &st.Status, &note, &logo, &banner, &social, &st.CreatedAt, &prefix, &st.LowStock, &nextNo)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return st, ErrNotFound
 	}
@@ -217,6 +223,11 @@ func (s *Service) GetStore(ctx context.Context, storeID string) (Store, error) {
 		return st, err
 	}
 	st.ReviewNote = deref(note)
+	st.SKUPrefix = deref(prefix)
+	if st.SKUPrefix == "" {
+		st.SKUPrefix = SKUPrefix(st.Name, st.ID)
+	}
+	st.SKUNext = SKUBase(st.SKUPrefix, nextNo)
 	st.LogoURL = s.files.PublicURL(deref(logo))
 	st.BannerURL = s.files.PublicURL(deref(banner))
 	_ = json.Unmarshal(social, &st.SocialLinks)
@@ -312,6 +323,8 @@ type UpdateStoreInput struct {
 	SocialLinks *map[string]string `json:"social_links"`
 	About       *string            `json:"about"`
 	AboutLang   string             `json:"about_lang"`
+	SKUPrefix   *string            `json:"sku_prefix"`          // 2–5 huruf besar/angka; hanya untuk SKU baru
+	LowStock    *int               `json:"low_stock_threshold"` // 0–1000; 0 = peringatan hanya saat habis
 }
 
 func (s *Service) UpdateStore(ctx context.Context, storeID, userID string, in UpdateStoreInput) (Store, error) {
@@ -352,13 +365,34 @@ func (s *Service) UpdateStore(ctx context.Context, storeID, userID string, in Up
 			return Store{}, invalid("about", "maksimal 2000 karakter")
 		}
 	}
+	if in.SKUPrefix != nil {
+		p := strings.ToUpper(strings.TrimSpace(*in.SKUPrefix))
+		if !skuPrefixRe.MatchString(p) {
+			return Store{}, invalid("sku_prefix", "2–5 huruf latin atau angka")
+		}
+		in.SKUPrefix = &p
+	}
+	if in.LowStock != nil && (*in.LowStock < 0 || *in.LowStock > 1000) {
+		return Store{}, invalid("low_stock_threshold", "0–1000")
+	}
+	// Kode SKU dan ambang stok adalah alat katalog, bukan profil yang diverifikasi: boleh diubah saat menunggu verifikasi.
+	catalogOnly := in.Name == nil && in.LogoKey == nil && in.BannerKey == nil && in.SocialLinks == nil && in.About == nil
 	err := db.WithActor(ctx, s.pool, userID, "seller", "", func(tx pgx.Tx) error {
 		var status, slug string
 		if err := tx.QueryRow(ctx, `SELECT status::text, slug FROM stores WHERE id = $1 FOR UPDATE`, storeID).Scan(&status, &slug); err != nil {
 			return err
 		}
-		if status == "pending_review" {
+		if status == "pending_review" && !catalogOnly {
 			return ErrNotEditable
+		}
+		if in.SKUPrefix != nil || in.LowStock != nil {
+			if _, err := tx.Exec(ctx, `UPDATE stores SET sku_prefix = coalesce($2, sku_prefix), low_stock_threshold = coalesce($3, low_stock_threshold)
+				WHERE id = $1`, storeID, in.SKUPrefix, in.LowStock); err != nil {
+				return err
+			}
+			if catalogOnly {
+				return nil
+			}
 		}
 		if _, err := tx.Exec(ctx, `UPDATE stores SET
 			name = coalesce($2, name), logo_key = coalesce($3, logo_key), banner_key = coalesce($4, banner_key),

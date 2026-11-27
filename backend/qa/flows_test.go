@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 	"testing"
@@ -290,7 +291,7 @@ func TestProducts(t *testing.T) {
 	p := e.call(t, "POST", base, product(nil), tok).want(201)
 	pid := p.str("id")
 	p.eq("status", "draft").eq("min_price", "5.50").eq("max_price", "6.00").eq("total_stock", "14").eq("translation_pending", "true")
-	check(t, strings.HasPrefix(p.str("variants.0.sku"), "P"), "SKU otomatis tidak dibuat: %s", p.str("variants.0.sku"))
+	check(t, regexp.MustCompile(`^[A-Z0-9]{2,5}-[0-9]{5}-RED-M$`).MatchString(p.str("variants.0.sku")), "SKU otomatis tidak dibuat: %s", p.str("variants.0.sku"))
 
 	t.Run("terjemahan: nama, deskripsi, opsi & nilai varian", func(t *testing.T) {
 		e.drainTranslations(t)

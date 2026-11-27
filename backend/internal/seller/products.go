@@ -123,6 +123,7 @@ type Product struct {
 	MinPrice         *string        `json:"min_price"`
 	MaxPrice         *string        `json:"max_price"`
 	TotalStock       int            `json:"total_stock"`
+	SKUBase          string         `json:"sku_base,omitempty"` // dasar SKU otomatis produk ini (mis. SKV-00012), kalau sudah diberi nomor
 	AutoFlags        map[string]any `json:"auto_flags"`
 	ReviewLane       *string        `json:"review_lane"`         // auto · manual (jalur moderasi terakhir)
 	PostReview       bool           `json:"post_review_pending"` // tayang otomatis, belum dilihat admin
@@ -791,12 +792,12 @@ func (s *Service) writeVariants(ctx context.Context, tx pgx.Tx, storeID, product
 		}
 	}
 
-	prefix := strings.ToUpper(strings.ReplaceAll(productID, "-", "")[:8])
+	skus, err := s.autoSKUs(ctx, tx, storeID, productID, variants)
+	if err != nil {
+		return false, err
+	}
 	for n, v := range variants {
-		sku := v.sku
-		if sku == "" {
-			sku = fmt.Sprintf("P%s-%d", prefix, n+1)
-		}
+		sku := skus[n]
 		var compare *string
 		if v.compare != nil {
 			c := v.compare.StringFixed(2)
@@ -1069,21 +1070,26 @@ func (s *Service) GetProduct(ctx context.Context, storeID, productID string) (Pr
 	var usage *int16
 	var warranty, ret int16
 	var storeActive bool
+	var skuPrefix string
+	var skuNo int
 	err := s.pool.QueryRow(ctx, `
 		SELECT p.id, p.store_id, p.category_id, p.source_lang::text, p.condition::text, coalesce(p.condition_note, ''), p.usage_months,
 		       p.warranty_type, p.warranty_months, p.return_days, p.status::text, p.moderation_status::text, p.moderation_note,
 		       p.min_price::text, p.max_price::text, p.auto_flags, p.review_lane, p.post_review_pending,
 		       p.submitted_at, p.published_at, p.created_at, p.updated_at,
-		       st.status = 'active',
+		       st.status = 'active', CASE WHEN p.sku_no IS NULL THEN '' ELSE coalesce(st.sku_prefix, '') END, coalesce(p.sku_no, 0),
 		       EXISTS (SELECT 1 FROM translation_jobs j WHERE j.entity_table = 'product_translations' AND j.entity_id = p.id::text
 		               AND j.status IN ('queued','running'))
 		FROM products p JOIN stores st ON st.id = p.store_id
 		WHERE p.id = $1 AND ($2 = '' OR p.store_id::text = $2) AND p.deleted_at IS NULL`, productID, storeID).
 		Scan(&p.ID, &p.StoreID, &p.CategoryID, &p.SourceLang, &p.Condition, &p.ConditionNote, &usage,
 			&p.WarrantyType, &warranty, &ret, &p.Status, &p.ModerationStatus, &note,
-			&p.MinPrice, &p.MaxPrice, &flags, &p.ReviewLane, &p.PostReview, &p.SubmittedAt, &p.PublishedAt, &p.CreatedAt, &p.UpdatedAt, &storeActive, &p.TranslationPending)
+			&p.MinPrice, &p.MaxPrice, &flags, &p.ReviewLane, &p.PostReview, &p.SubmittedAt, &p.PublishedAt, &p.CreatedAt, &p.UpdatedAt, &storeActive, &skuPrefix, &skuNo, &p.TranslationPending)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return p, ErrNotFound
+	}
+	if skuPrefix != "" && skuNo > 0 {
+		p.SKUBase = SKUBase(skuPrefix, skuNo)
 	}
 	if err != nil {
 		return p, err
@@ -1266,6 +1272,8 @@ var productSorts = map[string]string{
 // ProductQuery: filter (tab), q (nama di bahasa apa pun / SKU), sort, halaman.
 type ProductQuery struct {
 	Filter, Sort string
+	Category     string // id kategori (termasuk sub-kategorinya)
+	Stock        string // out (ada varian habis) · low (ada varian sisa 1..ambang)
 	Page         paging.Params
 }
 
@@ -1295,6 +1303,8 @@ func (s *Service) ListProducts(ctx context.Context, storeID string, q ProductQue
 		base += ` AND ` + productSearch
 		args = append(args, paging.Like(q.Page.Q))
 	}
+	extra, args := catalogWhere(q, args, true)
+	base += extra
 	limit, offset := 500, 0
 	if q.Page.On {
 		limit, offset = q.Page.Size, q.Page.Offset()
@@ -1375,13 +1385,22 @@ type StockPriceInput struct {
 	} `json:"variants"`
 }
 
-// UpdateStockPrice: ubah harga/stok tanpa dicek ulang moderator.
+// UpdateStockPrice: ubah harga/stok tanpa kirim ulang formulir. Produk tayang yang harganya kena aturan harga
+// (turun > drop_pct, di bawah harga wajar, harga coret tidak wajar) masuk antrean moderasi — lihat finishProducts.
 func (s *Service) UpdateStockPrice(ctx context.Context, storeID, productID, userID string, in StockPriceInput) (Product, error) {
-	if _, err := s.loadExisting(ctx, storeID, productID); err != nil {
+	old, err := s.loadExisting(ctx, storeID, productID)
+	if err != nil {
+		return Product{}, err
+	}
+	if old.status == "banned" {
+		return Product{}, ErrProductBanned
+	}
+	g, err := s.loadPriceGuard(ctx)
+	if err != nil {
 		return Product{}, err
 	}
 	limit := decimal.NewFromInt(maxPrice)
-	err := db.WithActor(ctx, s.pool, userID, "seller", "", func(tx pgx.Tx) error {
+	err = db.WithActor(ctx, s.pool, userID, "seller", "", func(tx pgx.Tx) error {
 		for i, v := range in.Variants {
 			price, err := decimal.NewFromString(strings.TrimSpace(v.Price))
 			if err != nil || !price.IsPositive() || price.GreaterThan(limit) {
@@ -1427,7 +1446,8 @@ func (s *Service) UpdateStockPrice(ctx context.Context, storeID, productID, user
 				}
 			}
 		}
-		return refreshPriceCache(ctx, tx, productID)
+		_, err := s.finishProducts(ctx, tx, g, map[string]bool{productID: true})
+		return err
 	})
 	if err != nil {
 		return Product{}, err

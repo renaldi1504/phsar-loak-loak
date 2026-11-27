@@ -211,8 +211,10 @@ function tabProfile(id, locked) {
     <p class="muted" style="margin:0">${t('aboutHint')}</p></section>
     <section class="card"><h2>${t('social')}</h2><p class="muted" style="margin:0">${t('spPfSocialW')}</p>
     ${['telegram', 'facebook', 'tiktok'].map(k => `<label>${k[0].toUpperCase() + k.slice(1)}<input id="soc_${k}" value="${esc(st.social_links?.[k] || '')}" maxlength="200"></label>`).join('')}</section>
-    <div data-errors-anchor><button class="primary sp-block" id="pSave" type="button" ${locked ? 'disabled' : ''}>${t('save')}</button></div>`;
+    <div data-errors-anchor><button class="primary sp-block" id="pSave" type="button" ${locked ? 'disabled' : ''}>${t('save')}</button></div>
+    ${catalogSettingsHTML(st)}`;
   $('#pLang').value = aboutLang;
+  bindCatalogSettings(id); // catalog: kode SKU & ambang stok (bisa diubah juga saat toko menunggu verifikasi)
   $('#bannerFile').onchange = async e => {
     const f = e.target.files[0];
     if (!f) return;

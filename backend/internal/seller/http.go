@@ -1,12 +1,15 @@
 package seller
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"io"
 	"log/slog"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -64,6 +67,11 @@ func (h *Handler) Routes() http.Handler {
 		// Produk: pemilik dan staf toko boleh mengelola.
 		r.Get("/products", h.listProducts)
 		r.Post("/products", h.createProduct)
+		r.Get("/products/export.csv", h.exportCSV)
+		r.Post("/products/import", h.importCSV)
+		r.Post("/products/bulk", h.bulkProducts)
+		r.Get("/variants", h.listVariants)
+		r.Patch("/variants/{variantID}", h.patchVariant)
 		r.Get("/products/{productID}", h.getProduct)
 		r.Put("/products/{productID}", h.updateProduct)
 		r.Delete("/products/{productID}", h.deleteProduct)
@@ -270,8 +278,92 @@ func (h *Handler) deletePickup(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) listProducts(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	l, err := h.svc.ListProducts(r.Context(), chi.URLParam(r, "storeID"), ProductQuery{
-		Filter: q.Get("filter"), Sort: q.Get("sort"), Page: paging.FromRequest(r, 24, 100)})
+		Filter: q.Get("filter"), Sort: q.Get("sort"), Category: q.Get("category"), Stock: q.Get("stock"),
+		Page: paging.FromRequest(r, 24, 100)})
 	h.respond(w, http.StatusOK, l, err)
+}
+
+// ---- Alat katalog (catalog_tools.go) ----
+
+func (h *Handler) listVariants(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query()
+	l, err := h.svc.ListVariants(r.Context(), chi.URLParam(r, "storeID"), ProductQuery{
+		Filter: q.Get("filter"), Sort: q.Get("sort"), Category: q.Get("category"), Stock: q.Get("stock"),
+		Page: paging.FromRequest(r, 50, 100)})
+	h.respond(w, http.StatusOK, l, err)
+}
+
+func (h *Handler) patchVariant(w http.ResponseWriter, r *http.Request) {
+	var in VariantPatch
+	if !decode(w, r, &in) {
+		return
+	}
+	res, err := h.svc.PatchVariant(r.Context(), chi.URLParam(r, "storeID"), chi.URLParam(r, "variantID"), uid(r), in)
+	if isBadUUID(err) {
+		err = ErrNotFound
+	}
+	h.respond(w, http.StatusOK, res, err)
+}
+
+func (h *Handler) bulkProducts(w http.ResponseWriter, r *http.Request) {
+	var in BulkInput
+	if !decode(w, r, &in) {
+		return
+	}
+	res, err := h.svc.Bulk(r.Context(), chi.URLParam(r, "storeID"), uid(r), in)
+	h.respond(w, http.StatusOK, res, err)
+}
+
+func (h *Handler) exportCSV(w http.ResponseWriter, r *http.Request) {
+	storeID := chi.URLParam(r, "storeID")
+	st, err := h.svc.GetStore(r.Context(), storeID)
+	if err != nil {
+		h.fail(w, err)
+		return
+	}
+	var buf bytes.Buffer
+	if err := h.svc.ExportCSV(r.Context(), storeID, &buf); err != nil {
+		h.fail(w, err)
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", `attachment; filename="`+exportName(st.SKUPrefix, time.Now())+`"`)
+	w.Header().Set("Cache-Control", "no-store")
+	_, _ = w.Write(buf.Bytes())
+}
+
+// importCSV: POST /products/import[?apply=1] — file CSV sebagai body mentah (text/csv) atau multipart field "file".
+func (h *Handler) importCSV(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, MaxImportBytes+64<<10)
+	var data []byte
+	var err error
+	if ct := r.Header.Get("Content-Type"); strings.HasPrefix(ct, "multipart/form-data") {
+		f, _, ferr := r.FormFile("file")
+		if ferr != nil {
+			writeErr(w, http.StatusUnprocessableEntity, "import_no_file", ferr.Error())
+			return
+		}
+		defer f.Close()
+		data, err = io.ReadAll(io.LimitReader(f, MaxImportBytes+1))
+	} else {
+		data, err = io.ReadAll(r.Body)
+	}
+	if err != nil {
+		writeErr(w, http.StatusRequestEntityTooLarge, "import_too_large", err.Error())
+		return
+	}
+	apply := r.URL.Query().Get("apply") == "1"
+	res, err := h.svc.ImportCSV(r.Context(), chi.URLParam(r, "storeID"), uid(r), data, apply)
+	var fe ImportFileError
+	if errors.As(err, &fe) {
+		status := http.StatusUnprocessableEntity
+		if fe.Code == "too_large" {
+			status = http.StatusRequestEntityTooLarge
+		}
+		writeErr(w, status, "import_"+fe.Code, fe.Detail)
+		return
+	}
+	h.respond(w, http.StatusOK, res, err)
 }
 
 func (h *Handler) createProduct(w http.ResponseWriter, r *http.Request) {

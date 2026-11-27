@@ -174,3 +174,75 @@ p.muted.small{font-size:13px;margin-top:4px}
   .wizfoot button:not(.primary){flex:1 1 0}
   .swnext .primary{flex:1 1 100%}
 }
+/* catalog: alat katalog (seller-catalog.js) — tampilan kartu/tabel SKU, filter, ubah cepat, aksi massal, impor CSV */
+.cattools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.cattools .grow{flex:1}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:#fff;padding:3px;gap:2px}
+.seg button{border:0;border-radius:999px;min-height:36px;padding:0 14px;font-size:13px;background:none}
+.seg button[aria-pressed=true]{background:var(--navy);color:#fff}
+.catfilters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+.catfilters select{width:100%}
+.skuwrap{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:20px}
+.skutable{width:100%;border-collapse:collapse;font-size:14px}
+.skutable th{text-align:left;font-size:12px;color:var(--muted);font-weight:700;padding:10px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+.skutable td{padding:8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.skutable tr:last-child td{border-bottom:0}
+.skutable input[data-v]{min-height:38px;padding:6px 10px;border-radius:12px;width:96px;min-width:0}
+.skutable input[data-v=stock_qty],.skutable input[data-v=low_stock_threshold]{width:76px}
+.skutable input[type=checkbox]{width:20px;min-height:20px;accent-color:var(--pink)}
+.skutable td small{display:block;font-size:11px}
+.skutable code{font-size:12px;background:#f4f2f6;padding:2px 6px;border-radius:6px;white-space:nowrap}
+.vprod{display:flex;gap:10px;align-items:center;color:inherit;text-decoration:none;min-width:200px}
+.vprod img,.vprod .noimg{width:44px;height:44px;border-radius:10px;object-fit:cover;background:#f1edf1;flex:none}
+.vprod b{display:block;font-size:14px;line-height:1.25}.vprod small{color:var(--muted)}
+.vchips{display:flex;gap:4px;margin-top:4px;flex-wrap:wrap}
+.c-sel{width:32px}.c-ok{width:28px;color:var(--ok);font-weight:800}
+.bulkbar{position:sticky;bottom:0;z-index:6;background:var(--navy);color:#fff;border-radius:20px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:flex;flex-wrap:wrap;gap:8px;align-items:center;box-shadow:0 10px 30px rgba(16,34,65,.25)}
+.bulkbar .bsel{margin-right:auto}
+.bulkbar button{min-height:40px;font-size:14px;background:#fff;color:var(--navy);border-color:#fff}
+.bulkbar button.danger{color:var(--bad)}
+.bulkbar .linkbtn{background:none;color:#fff;border:0;text-decoration:underline}
+@media (max-width:899px){.bulkbar{bottom:calc(76px + env(safe-area-inset-bottom))}}
+fieldset.radios{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:8px}
+fieldset.radios label{flex-direction:row;align-items:center;gap:8px;display:flex;font-weight:600}
+dialog.impdlg{width:min(860px,calc(100vw - 24px))}
+dialog.impdlg{padding-bottom:0}
+dialog.impdlg .wizfoot{margin:0 -20px;padding-left:20px;padding-right:20px}
+.impfile{align-self:flex-start}
+.imptable tr.imperr{background:#fff7f7}
+.imptable td.bad{color:var(--bad);font-weight:600}
+@media (max-width:640px){
+  .cattools .grow{display:none}
+  .cattools .seg{flex:1 1 100%}.cattools .seg button{flex:1}
+  .cattools>button.small{flex:1 1 0}
+  .catfilters{grid-template-columns:1fr 1fr}.catfilters select:first-of-type{grid-column:1/-1}
+  /* tabel SKU jadi kartu per baris: nama di atas, kolom isian berlabel di bawah */
+  .skuwrap{background:none;border:0;overflow:visible}
+  .skutable thead{display:none}
+  .skutable,.skutable tbody{display:block}
+  .skutable tr{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:12px;margin-bottom:10px}
+  .skutable td{border:0;padding:0}
+  .skutable td.c-sel{position:absolute;top:22px;left:12px}
+  .skutable td.c-prod{grid-column:1/-1;padding-left:32px}
+  .skutable td.c-sku{grid-column:1/-1}
+  .skutable td[data-l]:not(.c-sku){display:flex;flex-direction:column;gap:3px}
+  .skutable td[data-l]:not(.c-sku)::before{content:attr(data-l);font-size:12px;color:var(--muted);font-weight:700}
+  .skutable td[data-l=""]::before{content:none}
+  .skutable input[data-v]{width:100%;min-height:44px;font-size:16px}
+  .skutable td.c-ok{position:absolute;opacity:0;pointer-events:none}
+  .skutable tr{position:relative}
+  .skutable tr:has(.c-ok .saved){border-color:#86efac}
+  .imptable tr{grid-template-columns:1fr 1fr 1fr}
+  .skutable.imptable tr.imperr{background:#fff7f7;border-color:#fecaca}
+  .skutable.imptable td:first-child{display:none}
+  .imptable td:nth-child(2){grid-column:1/-1}
+  .imptable td:nth-child(3){grid-column:auto}
+  .imptable td[colspan]{grid-column:1/-1}
+  .bulkbar{margin:0 -16px;border-radius:20px 20px 0 0;padding-left:16px;padding-right:16px}
+  .bulkbar .bsel{flex:1 1 auto}
+  .bulkbar button:not(.linkbtn){flex:1 1 calc(33% - 6px);min-height:40px;font-size:13px;padding:0 6px}
+  dialog.impdlg{width:100vw;max-width:100vw;height:100dvh;max-height:100dvh;border-radius:0;margin:0}
+  dialog.impdlg form{min-height:calc(100dvh - 40px)}
+  dialog.impdlg .skuwrap{flex:1}
+  dialog.impdlg .wizfoot{margin-top:auto;border-radius:0}
+}

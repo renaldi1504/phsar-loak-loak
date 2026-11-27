@@ -131,10 +131,11 @@ addStrings({
     pSort_price_desc: '价格从高到低', pSort_stock_low: '库存少的优先'},
 });
 const PSORTS = ['updated', 'name', 'price_asc', 'price_desc', 'stock_low'];
-Object.assign(PF, {q: '', sort: 'updated', page: 1});
+Object.assign(PF, {q: '', sort: 'updated', page: 1, size: 24, category: '', stock: ''});
 
 async function tabProducts(id) {
-  const query = qs({filter: PF.filter, q: PF.q, sort: PF.sort, page: PF.page, size: 24});
+  if (PF.view === 'table') return tabVariantTable(id); // catalog: tabel per SKU (seller-catalog.js)
+  const query = qs({filter: PF.filter, q: PF.q, sort: PF.sort, page: PF.page, size: PF.size, category: PF.category, stock: PF.stock});
   const [list, cats] = await Promise.all([api(`/v1/seller/stores/${id}/products?${query}`), categories()]);
   const {products, counts = {}, page} = list;
   if (page && PF.page > page.pages) { PF.page = page.pages; return tabProducts(id); } // mis. setelah produk dihapus
@@ -156,18 +157,17 @@ async function tabProducts(id) {
     : `<p class="muted">${t('noProducts')}</p>`;
   $('#tab').innerHTML = `
     ${active ? '' : `<div class="banner info">${t('storeNotActiveHint')}</div>`}
-    <div class="spread"><div class="tabs">${['all', 'draft', 'pending', 'live', 'changes', 'archived'].map(f =>
-      `<button type="button" aria-selected="${PF.filter === f}" data-pf="${f}">${t('f_' + f)}${counts[f] != null ? ` <span class="tcount">${counts[f]}</span>` : ''}</button>`).join('')}</div>
-      <a class="btn primary" href="#/store/${id}/product/new">+ ${t('addProduct')}</a></div>
+    ${catalogHead(id, counts)}
     <div class="listbar">${searchBox('pQ', PF.q, t('pSearchPh'))}
       <label class="sr-only" for="pSort">${t('pSort')}</label>
       <select id="pSort" aria-label="${t('pSort')}">${PSORTS.map(k => `<option value="${k}" ${PF.sort === k ? 'selected' : ''}>${t('pSort_' + k)}</option>`).join('')}</select></div>
+    ${catalogFilters(cats)}
     ${products.length ? `<div class="pgrid">${cards}</div>` : empty}
     ${pagerHTML(page)}`;
-  document.querySelectorAll('[data-pf]').forEach(b => b.onclick = () => { PF.filter = b.dataset.pf; PF.page = 1; tabProducts(id); });
   $('#pSort').onchange = e => { PF.sort = e.target.value; PF.page = 1; tabProducts(id); };
   bindSearch('pQ', v => { if (v === PF.q) return; PF.q = v; PF.page = 1; tabProducts(id); });
   bindPager($('#tab'), p => { PF.page = p; tabProducts(id); });
+  bindCatalogHead(id);
 }
 
 // ---- Editor produk ----
@@ -248,18 +248,20 @@ function drawEditor(cats) {
 
   const allCombos = f.hasOptions ? combos(f.options) : [];
   const ready = f.hasOptions && f.options.every(o => o.values.length);
+  const skuPh = skuPreviews(f, allCombos); // catalog: pratinjau SKU otomatis (seller-catalog.js)
   const variantTable = !f.hasOptions ? `<div class="grid">
       <label>${t('price')}<input id="sPrice" inputmode="decimal" value="${esc(f.single.price)}" placeholder="0.00"></label>
       <label>${t('comparePrice')} <span class="muted">(${t('optional')})</span><input id="sCompare" inputmode="decimal" value="${esc(f.single.compare_at_price)}"></label>
       <label>${t('stockQty')}<input id="sStock" type="number" min="0" value="${esc(f.single.stock_qty)}"></label>
-      <label>${t('sku')} <span class="muted">(${t('optional')})</span><input id="sSku" value="${esc(f.single.sku)}" maxlength="64"></label></div>`
+      <label>${t('sku')} <span class="muted">(${t('optional')})</span><input id="sSku" value="${esc(f.single.sku)}" maxlength="64" placeholder="${esc(skuPh.single)}"></label></div>
+      ${skuPh.single ? `<p class="muted small">${t('skuAutoHint', {ex: esc(skuPh.single)})}</p>` : ''}`
     : !ready ? `<p class="muted">${t('noVariants')}</p>` : `<div style="overflow-x:auto"><table class="vtable"><thead><tr><th>${t('available')}</th><th>${t('variant')}</th><th>${t('price')}</th><th>${t('comparePrice')}</th><th>${t('stockQty')}</th><th>${t('sku')}</th></tr></thead><tbody>
       <tr class="applyall"><td></td><td><b>${t('applyAll')}</b></td><td><input id="allPrice" inputmode="decimal" placeholder="0.00"></td><td><input id="allCompare" inputmode="decimal"></td><td><input id="allStock" type="number" min="0"></td><td><button type="button" onclick="applyAll()">${t('applyAll')}</button></td></tr>
       ${allCombos.map(c => { const k = rowKey(c), r = f.rows[k] || (f.rows[k] = {on: true, price: '', compare_at_price: '', stock_qty: 1, sku: ''});
         return `<tr data-row="${esc(k)}"><td><input type="checkbox" data-rf="on" ${r.on ? 'checked' : ''} aria-label="${t('available')} ${esc(c.join(' / '))}"></td><td>${esc(c.join(' / '))}</td>
           <td><input data-rf="price" inputmode="decimal" value="${esc(r.price)}" placeholder="0.00"></td><td><input data-rf="compare_at_price" inputmode="decimal" value="${esc(r.compare_at_price)}"></td>
-          <td><input data-rf="stock_qty" type="number" min="0" value="${esc(r.stock_qty)}"></td><td><input data-rf="sku" value="${esc(r.sku)}" maxlength="64"></td></tr>`; }).join('')}
-    </tbody></table></div>`;
+          <td><input data-rf="stock_qty" type="number" min="0" value="${esc(r.stock_qty)}"></td><td><input data-rf="sku" value="${esc(r.sku)}" maxlength="64" placeholder="${esc(skuPh.rows[k] || '')}"></td></tr>`; }).join('')}
+    </tbody></table></div>${skuPh.example ? `<p class="muted small">${t('skuAutoHint', {ex: esc(skuPh.example)})}</p>` : ''}`;
 
   const others = p ? Object.keys(LANGS).filter(l => l !== p.source_lang) : [];
   const st = p?.translation_state || 'done';
