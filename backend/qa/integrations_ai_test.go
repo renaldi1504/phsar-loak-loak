@@ -27,7 +27,7 @@ func TestIntegrationsAIKeys(t *testing.T) {
 	t.Cleanup(func() { e.sql(t, `DELETE FROM integrations WHERE code IN ('anthropic', 'gemini', 'google_maps')`) })
 
 	anthropicKey := "sk-ant-api03-" + strings.Repeat("a", 40) + "QA12"
-	geminiKey := "AIzaSy" + strings.Repeat("g", 33)
+	geminiKey := "AQ.Ab8RN6" + strings.Repeat("g", 45) // format baru Google AI Studio (auth key)
 
 	t.Run("hanya super admin", func(t *testing.T) {
 		e.call(t, "GET", "/admin/api/integrations", nil, mod).want(403)
@@ -45,6 +45,9 @@ func TestIntegrationsAIKeys(t *testing.T) {
 
 	t.Run("simpan kunci: hanya 4 karakter terakhir yang tampil, urutan Anthropic → Gemini", func(t *testing.T) {
 		e.call(t, "PUT", "/admin/api/integrations/ai", map[string]any{"provider": "anthropic", "enabled": true, "key": anthropicKey, "mfa_code": code()}, tok).want(200)
+		// kunci lama AIza… tetap diterima; teks acak ditolak
+		e.call(t, "PUT", "/admin/api/integrations/ai", map[string]any{"provider": "gemini", "enabled": true, "key": "AIzaSy" + strings.Repeat("g", 33), "mfa_code": code()}, tok).want(200)
+		e.call(t, "PUT", "/admin/api/integrations/ai", map[string]any{"provider": "gemini", "enabled": true, "key": "not a key at all", "mfa_code": code()}, tok).wantErr(422, "validation", "key")
 		r := e.call(t, "PUT", "/admin/api/integrations/ai", map[string]any{"provider": "gemini", "enabled": true, "model": "gemini-3.5-flash", "key": geminiKey, "mfa_code": code()}, tok).want(200)
 		r.eq("ai.anthropic.active", "true").eq("ai.anthropic.source", "admin").eq("ai.anthropic.key_hint", "QA12")
 		r.eq("ai.gemini.active", "true").eq("ai.order.0", "anthropic").eq("ai.order.1", "gemini")

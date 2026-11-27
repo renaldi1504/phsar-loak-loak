@@ -190,7 +190,8 @@ type AIInput struct {
 
 var aiKeyRe = map[string]*regexp.Regexp{
 	"anthropic": regexp.MustCompile(`^sk-ant-[A-Za-z0-9_-]{20,200}$`),
-	"gemini":    regexp.MustCompile(`^[A-Za-z0-9_-]{30,80}$`),
+	// Gemini: kunci lama "AIza…" (standard key) atau kunci baru "AQ.…" (auth key, bawaan Google AI Studio sejak 2026).
+	"gemini": regexp.MustCompile(`^(AIza[A-Za-z0-9_-]{30,80}|AQ\.[A-Za-z0-9._-]{20,300})$`),
 }
 
 func (s *Store) SaveAI(ctx context.Context, actorID string, in AIInput) error {
@@ -211,7 +212,7 @@ func (s *Store) SaveAI(ctx context.Context, actorID string, in AIInput) error {
 		if in.Provider == "anthropic" {
 			return FieldError{"key", "Anthropic keys start with sk-ant- (console.anthropic.com → API keys)"}
 		}
-		return FieldError{"key", "Gemini key looks wrong (Google AI Studio → Get API key)"}
+		return FieldError{"key", "Gemini key looks wrong — it starts with AQ. or AIza (Google AI Studio → Get API key)"}
 	}
 	return s.saveSecret(ctx, actorID, in.Provider, in.Enabled, map[string]string{"model": in.Model}, key, in.Clear)
 }
