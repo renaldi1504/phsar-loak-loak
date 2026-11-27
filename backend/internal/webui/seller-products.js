@@ -28,7 +28,7 @@ addStrings({
     secTranslations: 'Translations', translating: 'Translating…', tr_machine: 'AI translation', tr_needs_review: 'AI — please check', tr_seller: 'Edited by you', tr_reviewer: 'Checked by Phsar', tr_source: 'Your original',
     editTr: 'Edit', useAi: 'Use AI translation', translationsLater: 'Translations appear here after you save.',
     err_store_not_active: 'Your store isn’t active yet. Save as draft for now.',
-    compressing: 'Compressing video…', compressed: 'optimised', optimizing: 'Optimising…', trs_pending: 'Translating…', trs_retrying: 'Translation problem', trs_failed: 'Translation failed', trs_off: 'Auto-translate off', trOffShort: 'Not translated', trFailedShort: 'Failed', writeTr: 'Write translation', trOff: 'Automatic translation is not set up on this server (ANTHROPIC_API_KEY is empty). You can write the translations yourself, or ask the Phsar team.', trFailed: 'The automatic translation failed. Try again, or write the translation yourself.', trRetrying: 'The translation service had a problem. We’ll retry automatically in a few minutes.', trRetry: 'Try again now', submitLocked: 'Send for review unlocks after Phsar approves your store.', compareHigher: 'Original price must be higher than the price (it’s shown crossed out). Leave it empty if there’s no discount.', needVideo: 'Add one product video.', needPhoto: 'Add at least one photo.', needMorePhotos: 'Without a video, add at least 3 photos (front, back, details).', noVideoNudge: 'No video yet — that’s okay. A 15–30 second phone clip helps buyers trust the item and puts it in the Videos feed.', vidOptional: 'optional', noVideoChip: 'No video', photoTips: 'Good photos: ✓ bright daylight ✓ front, back & sides ✓ close-up of labels or details', needDefect: 'Used items need a close-up photo of any scratches or wear.', needValue: 'Add at least one value, e.g. Red or M.', needVariantOn: 'Tick at least one variant to sell.', err_product_banned: 'This product was blocked by Phsar.'},
+    compressing: 'Compressing video…', compressed: 'optimised', optimizing: 'Optimising…', trs_pending: 'Translating…', trs_retrying: 'Translation problem', trs_failed: 'Translation failed', trs_off: 'Auto-translate off', trOffShort: 'Not translated', trFailedShort: 'Failed', writeTr: 'Write translation', trOff: 'Automatic translation is not set up on this server (ANTHROPIC_API_KEY is empty). You can write the translations yourself, or ask the Phsar team.', trFailed: 'The automatic translation failed. Try again, or write the translation yourself.', trRetrying: 'The translation service had a problem. We’ll retry automatically in a few minutes.', trRetry: 'Try again now', submitLocked: 'Send for review unlocks after Phsar approves your store.', draftVerify: 'Save draft & verify my store', draftVerifyHint: 'Your product is saved as a draft and you go straight to the store check. Once Phsar approves your store, you can publish it with one tap.', draftVerifyFix: 'Draft saved. Finish this step so Phsar can verify your store.', storeReviewing: 'Your store is being reviewed by Phsar. You can publish as soon as it is approved.', compareHigher: 'Original price must be higher than the price (it’s shown crossed out). Leave it empty if there’s no discount.', needVideo: 'Add one product video.', needPhoto: 'Add at least one photo.', needMorePhotos: 'Without a video, add at least 3 photos (front, back, details).', noVideoNudge: 'No video yet — that’s okay. A 15–30 second phone clip helps buyers trust the item and puts it in the Videos feed.', vidOptional: 'optional', noVideoChip: 'No video', photoTips: 'Good photos: ✓ bright daylight ✓ front, back & sides ✓ close-up of labels or details', needDefect: 'Used items need a close-up photo of any scratches or wear.', needValue: 'Add at least one value, e.g. Red or M.', needVariantOn: 'Tick at least one variant to sell.', err_product_banned: 'This product was blocked by Phsar.'},
   km: {wz_media: 'វីដេអូ និងរូបថត', wz_basic: 'ឈ្មោះ និងប្រភេទ', wz_price: 'តម្លៃ និងស្តុក', wz_check: 'ពិនិត្យ និងផ្ញើ', wzStepOf: 'ជំហាន {a} នៃ 4', wzNext: 'បន្ទាប់៖ {s}', wzBack: 'ថយក្រោយ', wzEdit: 'ប្តូរ',
     wzh_media: 'ថតផលិតផលនៅក្នុងដៃ បង្វិលវា ហើយបង្ហាញគ្រប់ពណ៌។ វីដេអូខ្លីជួយឲ្យអ្នកទិញទុកចិត្ត — រូបថតច្បាស់ក៏បានដែរ។', wzh_basic: 'សរសេរឈ្មោះតាមរបៀបដែលអ្នកទិញស្វែងរក រួចជ្រើសប្រភេទ។', wzh_price: 'កំណត់តម្លៃអ្នកទិញបង់ និងចំនួនដែលអ្នកមាន។ យើងបង្ហាញចំនួនអ្នកទទួលបានបន្ទាប់ពីកម្រៃ Phsar។', wzh_check: 'នេះជារបៀបដែលអ្នកទិញនឹងឃើញ។ ពិនិត្យ រួចដាក់លក់។',
     gv_title: 'វីដេអូល្អ៖', gv1: 'ពន្លឺភ្លឺ ផ្ទៃខាងក្រោយសាមញ្ញ', gv2: 'បង្ហាញទំហំក្បែរដៃ', gv3: 'បង្ហាញគ្រប់ពណ៌ដែលលក់',
@@ -56,7 +56,7 @@ addStrings({
     secTranslations: 'ការបកប្រែ', translating: 'កំពុងបកប្រែ…', tr_machine: 'បកប្រែដោយ AI', tr_needs_review: 'AI — សូមពិនិត្យ', tr_seller: 'អ្នកបានកែ', tr_reviewer: 'Phsar បានពិនិត្យ', tr_source: 'អត្ថបទដើមរបស់អ្នក',
     editTr: 'កែ', useAi: 'ប្រើការបកប្រែ AI', translationsLater: 'ការបកប្រែនឹងបង្ហាញនៅទីនេះ បន្ទាប់ពីរក្សាទុក។',
     err_store_not_active: 'ហាងមិនទាន់សកម្ម។ សូមរក្សាទុកជាសេចក្តីព្រាងសិន។',
-    compressing: 'កំពុងបង្រួមវីដេអូ…', compressed: 'បានបង្រួម', optimizing: 'កំពុងរៀបចំ…', trs_pending: 'កំពុងបកប្រែ…', trs_retrying: 'បញ្ហាបកប្រែ', trs_failed: 'បកប្រែមិនបាន', trs_off: 'ការបកប្រែស្វ័យប្រវត្តិបិទ', trOffShort: 'មិនទាន់បកប្រែ', trFailedShort: 'បរាជ័យ', writeTr: 'សរសេរការបកប្រែ', trOff: 'ម៉ាស៊ីនមេនេះមិនទាន់កំណត់ការបកប្រែស្វ័យប្រវត្តិ។ អ្នកអាចសរសេរការបកប្រែដោយខ្លួនឯង ឬសួរក្រុម Phsar។', trFailed: 'ការបកប្រែស្វ័យប្រវត្តិបរាជ័យ។ សូមព្យាយាមម្តងទៀត ឬសរសេរដោយខ្លួនឯង។', trRetrying: 'សេវាបកប្រែមានបញ្ហា។ យើងនឹងព្យាយាមម្តងទៀតក្នុងពីរបីនាទី។', trRetry: 'ព្យាយាមឥឡូវនេះ', submitLocked: 'អាចផ្ញើឱ្យពិនិត្យបាន ពេល Phsar អនុម័តហាងរបស់អ្នក។', compareHigher: 'តម្លៃដើមត្រូវខ្ពស់ជាងតម្លៃលក់ (បង្ហាញជាតម្លៃគូសចោល)។ ទុកទទេ បើគ្មានការបញ្ចុះតម្លៃ។', needVideo: 'សូមបន្ថែមវីដេអូផលិតផលមួយ។', needPhoto: 'សូមបន្ថែមរូបថតយ៉ាងហោចណាស់មួយ។', needMorePhotos: 'បើគ្មានវីដេអូ សូមបន្ថែមរូបយ៉ាងហោចណាស់ 3 (មុខ ក្រោយ ព័ត៌មានលម្អិត)។', noVideoNudge: 'មិនទាន់មានវីដេអូ — មិនអីទេ។ ឃ្លីបទូរសព្ទ 15–30 វិនាទី ជួយឲ្យអ្នកទិញទុកចិត្ត ហើយបង្ហាញក្នុងផ្នែកវីដេអូ។', vidOptional: 'ស្រេចចិត្ត', noVideoChip: 'គ្មានវីដេអូ', photoTips: 'រូបល្អ៖ ✓ ពន្លឺថ្ងៃភ្លឺ ✓ មុខ ក្រោយ និងចំហៀង ✓ ថតជិតស្លាក ឬព័ត៌មានលម្អិត', needDefect: 'ទំនិញប្រើរួចត្រូវមានរូបថតជិតកន្លែងឆ្កូត ឬខូច។', needValue: 'សូមបន្ថែមយ៉ាងហោចមួយ ឧ. ក្រហម ឬ M។', needVariantOn: 'សូមធីកជម្រើសយ៉ាងហោចមួយដើម្បីលក់។', err_product_banned: 'ផលិតផលនេះត្រូវបាន Phsar ហាមឃាត់។'},
+    compressing: 'កំពុងបង្រួមវីដេអូ…', compressed: 'បានបង្រួម', optimizing: 'កំពុងរៀបចំ…', trs_pending: 'កំពុងបកប្រែ…', trs_retrying: 'បញ្ហាបកប្រែ', trs_failed: 'បកប្រែមិនបាន', trs_off: 'ការបកប្រែស្វ័យប្រវត្តិបិទ', trOffShort: 'មិនទាន់បកប្រែ', trFailedShort: 'បរាជ័យ', writeTr: 'សរសេរការបកប្រែ', trOff: 'ម៉ាស៊ីនមេនេះមិនទាន់កំណត់ការបកប្រែស្វ័យប្រវត្តិ។ អ្នកអាចសរសេរការបកប្រែដោយខ្លួនឯង ឬសួរក្រុម Phsar។', trFailed: 'ការបកប្រែស្វ័យប្រវត្តិបរាជ័យ។ សូមព្យាយាមម្តងទៀត ឬសរសេរដោយខ្លួនឯង។', trRetrying: 'សេវាបកប្រែមានបញ្ហា។ យើងនឹងព្យាយាមម្តងទៀតក្នុងពីរបីនាទី។', trRetry: 'ព្យាយាមឥឡូវនេះ', submitLocked: 'អាចផ្ញើឱ្យពិនិត្យបាន ពេល Phsar អនុម័តហាងរបស់អ្នក។', draftVerify: 'រក្សាទុកសេចក្តីព្រាង និងផ្ទៀងផ្ទាត់ហាង', draftVerifyHint: 'ផលិតផលត្រូវបានរក្សាទុកជាសេចក្តីព្រាង ហើយអ្នកទៅផ្ទៀងផ្ទាត់ហាងភ្លាម។ ពេល Phsar អនុម័តហាង អ្នកអាចផ្សាយវាដោយចុចម្តង។', draftVerifyFix: 'បានរក្សាទុកសេចក្តីព្រាង។ សូមបំពេញជំហាននេះ ដើម្បីឱ្យ Phsar ផ្ទៀងផ្ទាត់ហាងរបស់អ្នក។', storeReviewing: 'Phsar កំពុងពិនិត្យហាងរបស់អ្នក។ អ្នកអាចផ្សាយបានភ្លាមៗពេលត្រូវបានអនុម័ត។', compareHigher: 'តម្លៃដើមត្រូវខ្ពស់ជាងតម្លៃលក់ (បង្ហាញជាតម្លៃគូសចោល)។ ទុកទទេ បើគ្មានការបញ្ចុះតម្លៃ។', needVideo: 'សូមបន្ថែមវីដេអូផលិតផលមួយ។', needPhoto: 'សូមបន្ថែមរូបថតយ៉ាងហោចណាស់មួយ។', needMorePhotos: 'បើគ្មានវីដេអូ សូមបន្ថែមរូបយ៉ាងហោចណាស់ 3 (មុខ ក្រោយ ព័ត៌មានលម្អិត)។', noVideoNudge: 'មិនទាន់មានវីដេអូ — មិនអីទេ។ ឃ្លីបទូរសព្ទ 15–30 វិនាទី ជួយឲ្យអ្នកទិញទុកចិត្ត ហើយបង្ហាញក្នុងផ្នែកវីដេអូ។', vidOptional: 'ស្រេចចិត្ត', noVideoChip: 'គ្មានវីដេអូ', photoTips: 'រូបល្អ៖ ✓ ពន្លឺថ្ងៃភ្លឺ ✓ មុខ ក្រោយ និងចំហៀង ✓ ថតជិតស្លាក ឬព័ត៌មានលម្អិត', needDefect: 'ទំនិញប្រើរួចត្រូវមានរូបថតជិតកន្លែងឆ្កូត ឬខូច។', needValue: 'សូមបន្ថែមយ៉ាងហោចមួយ ឧ. ក្រហម ឬ M។', needVariantOn: 'សូមធីកជម្រើសយ៉ាងហោចមួយដើម្បីលក់។', err_product_banned: 'ផលិតផលនេះត្រូវបាន Phsar ហាមឃាត់។'},
   zh: {wz_media: '视频和照片', wz_basic: '名称和分类', wz_price: '价格和库存', wz_check: '检查并提交', wzStepOf: '第 {a} 步，共 4 步', wzNext: '下一步：{s}', wzBack: '返回', wzEdit: '修改',
     wzh_media: '把商品拿在手里拍，转一圈，展示每种颜色。短视频更能让买家放心——清晰的照片也可以。', wzh_basic: '按买家搜索的方式写名称，然后选择分类。', wzh_price: '设置买家支付的价格和库存数量。我们会显示扣除 Phsar 佣金后你能收到多少。', wzh_check: '这是买家看到的样子。检查后发布。',
     gv_title: '好视频：', gv1: '光线明亮、背景简洁', gv2: '放在手边展示尺寸', gv3: '展示所有在售颜色',
@@ -84,7 +84,7 @@ addStrings({
     secTranslations: '翻译', translating: '翻译中…', tr_machine: 'AI 翻译', tr_needs_review: 'AI——请检查', tr_seller: '已由你修改', tr_reviewer: 'Phsar 已核对', tr_source: '你的原文',
     editTr: '编辑', useAi: '使用 AI 翻译', translationsLater: '保存后这里会显示翻译。',
     err_store_not_active: '店铺尚未上线，请先保存为草稿。',
-    compressing: '正在压缩视频…', compressed: '已优化', optimizing: '处理中…', trs_pending: '翻译中…', trs_retrying: '翻译出现问题', trs_failed: '翻译失败', trs_off: '自动翻译未开启', trOffShort: '未翻译', trFailedShort: '失败', writeTr: '自己填写翻译', trOff: '此服务器未设置自动翻译（ANTHROPIC_API_KEY 为空）。你可以自己填写翻译，或联系 Phsar 团队。', trFailed: '自动翻译失败。请重试，或自己填写翻译。', trRetrying: '翻译服务出现问题，几分钟后会自动重试。', trRetry: '立即重试', submitLocked: 'Phsar 通过店铺审核后才能提交商品审核。', compareHigher: '原价必须高于售价（会以划线价显示）。没有折扣请留空。', needVideo: '请添加一个商品视频。', needPhoto: '请至少添加一张照片。', needMorePhotos: '没有视频时，请至少添加 3 张照片（正面、背面、细节）。', noVideoNudge: '还没有视频——没关系。一段 15–30 秒的手机短片能让买家更放心，并进入视频频道。', vidOptional: '可选', noVideoChip: '无视频', photoTips: '好照片：✓ 明亮自然光 ✓ 正面、背面和侧面 ✓ 标签或细节特写', needDefect: '二手商品需要划痕或磨损处的近拍照片。', needValue: '请至少添加一个值，例如 红色 或 M。', needVariantOn: '请至少勾选一个要销售的规格。', err_product_banned: '此商品已被 Phsar 封禁。'},
+    compressing: '正在压缩视频…', compressed: '已优化', optimizing: '处理中…', trs_pending: '翻译中…', trs_retrying: '翻译出现问题', trs_failed: '翻译失败', trs_off: '自动翻译未开启', trOffShort: '未翻译', trFailedShort: '失败', writeTr: '自己填写翻译', trOff: '此服务器未设置自动翻译（ANTHROPIC_API_KEY 为空）。你可以自己填写翻译，或联系 Phsar 团队。', trFailed: '自动翻译失败。请重试，或自己填写翻译。', trRetrying: '翻译服务出现问题，几分钟后会自动重试。', trRetry: '立即重试', submitLocked: 'Phsar 通过店铺审核后才能提交商品审核。', draftVerify: '保存草稿并验证店铺', draftVerifyHint: '商品会保存为草稿，然后直接进入店铺验证。Phsar 通过店铺审核后，一键即可发布。', draftVerifyFix: '草稿已保存。请完成这一步，以便 Phsar 验证你的店铺。', storeReviewing: 'Phsar 正在审核你的店铺，通过后即可发布。', compareHigher: '原价必须高于售价（会以划线价显示）。没有折扣请留空。', needVideo: '请添加一个商品视频。', needPhoto: '请至少添加一张照片。', needMorePhotos: '没有视频时，请至少添加 3 张照片（正面、背面、细节）。', noVideoNudge: '还没有视频——没关系。一段 15–30 秒的手机短片能让买家更放心，并进入视频频道。', vidOptional: '可选', noVideoChip: '无视频', photoTips: '好照片：✓ 明亮自然光 ✓ 正面、背面和侧面 ✓ 标签或细节特写', needDefect: '二手商品需要划痕或磨损处的近拍照片。', needValue: '请至少添加一个值，例如 红色 或 M。', needVariantOn: '请至少勾选一个要销售的规格。', err_product_banned: '此商品已被 Phsar 封禁。'},
 });
 
 const LANGS = {en: 'English', km: 'ខ្មែរ', zh: '中文'};
@@ -349,9 +349,14 @@ function drawEditor(cats) {
   const foot = step < 3
     ? `${step > 0 ? `<button type="button" onclick="wzGo(${step - 1})">${t('wzBack')}</button>` : ''}${!wasSent ? `<button type="button" id="btnDraft">${t('saveDraft')}</button>` : ''}
        <span class="grow"></span><button type="button" class="primary" onclick="wzNext()">${t('wzNext', {s: t('wz_' + keys[step + 1])})}</button>`
+    : !wasSent && S.store?.status === 'onboarding' && S.store?.role === 'owner'
+    // Toko baru (belum diverifikasi): langkah terakhir = simpan draf lalu langsung ke verifikasi toko.
+    ? `<button type="button" onclick="wzGo(2)">${t('wzBack')}</button><span class="grow"></span>
+       <button type="button" class="primary" id="btnVerify">${t('draftVerify')} →</button>
+       <span class="muted" style="flex-basis:100%">${t('draftVerifyHint')}</span>`
     : `<button type="button" onclick="wzGo(2)">${t('wzBack')}</button>${!wasSent ? `<button type="button" id="btnDraft">${t('saveDraft')}</button>` : ''}<span class="grow"></span>
        <button type="button" class="primary" id="btnSubmit" ${p?.status === 'banned' || (!wasSent && !st_active()) ? 'disabled' : ''}>${wasSent ? t('saveResubmit') : t('submitReview')}</button>
-       ${!wasSent && !st_active() ? `<span class="muted" style="flex-basis:100%">${t('submitLocked')}</span>` : ''}`;
+       ${!wasSent && !st_active() ? `<span class="muted" style="flex-basis:100%">${t(S.store?.status === 'pending_review' ? 'storeReviewing' : 'submitLocked')}</span>` : ''}`;
 
   $('#app').innerHTML = focusShell(S.store, `
     <a class="backlink" href="#/store/${storeId}/products">${t('backProducts')}</a>
@@ -397,6 +402,7 @@ function bindEditor() {
   document.querySelectorAll('[data-upload]').forEach(el => el.onchange = e => uploadMedia(el.dataset.upload, [...e.target.files]));
   if ($('#btnDraft')) $('#btnDraft').onclick = () => saveProduct(false);
   if ($('#btnSubmit')) $('#btnSubmit').onclick = () => saveProduct(true);
+  if ($('#btnVerify')) $('#btnVerify').onclick = draftThenVerify;
   document.querySelectorAll('#sPrice, [data-rf=price], tr[data-row] [data-rf=on]').forEach(el => el.addEventListener('input', () => { readForm(); const y = $('#youGet'); if (y) y.innerHTML = ygHTML(); }));
 }
 
@@ -633,11 +639,41 @@ async function saveProduct(submit) {
     PF.E = {storeId: E.storeId, loadedId: p.id, product: p, f: fromProduct(p), editingTr: null, step: 3};
     if (location.hash !== `#/store/${E.storeId}/product/${p.id}`) history.replaceState(null, '', `#/store/${E.storeId}/product/${p.id}`);
     drawEditor(PF.cats[P.lang]);
+    return p;
   } catch (e) {
     const fs = fieldStep(e.field);
     if (fs !== null && fs !== PF.E.step) { PF.E.step = fs; drawEditor(PF.cats[P.lang]); }
     showError(e, productErrorField);
   }
+}
+
+// Toko baru: simpan produk sebagai draf, lalu langsung ke verifikasi toko — kalau semua langkah sudah lengkap
+// toko langsung dikirim untuk ditinjau, kalau belum seller dibawa ke langkah yang masih kurang.
+async function draftThenVerify() {
+  const btn = $('#btnVerify');
+  if (btn) btn.disabled = true;
+  const p = await saveProduct(false);
+  if (!p) { if ($('#btnVerify')) $('#btnVerify').disabled = false; return; }
+  const id = PF.E.storeId;
+  try {
+    const st = await api(`/v1/seller/stores/${id}`);
+    S.store = st;
+    const next = setupSteps(st).find(x => x.n && !x.done);
+    if (!next || next.k === 'submit') {
+      if (st.checklist?.can_submit) {
+        await api(`/v1/seller/stores/${id}/submit`, {method: 'POST'});
+        toast(t('sw_sentT'));
+      }
+      S.tab = 'home';
+    } else {
+      toast(t('draftVerifyFix'), 'info');
+      S.tab = next.k;
+    }
+    try { sessionStorage.setItem('phsar-tab-' + id, S.tab); } catch {}
+    S.storeId = id;
+    location.hash = '#/store/' + id;
+    window.scrollTo(0, 0);
+  } catch (e) { toast(errMsg(e), 'error'); if ($('#btnVerify')) $('#btnVerify').disabled = false; }
 }
 
 async function refreshProduct() {
