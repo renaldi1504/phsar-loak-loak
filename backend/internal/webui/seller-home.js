@@ -24,12 +24,12 @@ addStrings({
     tipTitle: 'Tip of the day',
     tips: ['Reply to buyers fast — shops that answer quickly are shown higher in search.', 'Products with a clear video sell much more often. Show the item in your hand.', 'Accept orders quickly. Late or rejected orders lower your shop score.'],
     staffHome: 'You are helping this shop as staff. You can handle orders, returns and products.',
-    su_title: 'Open your shop in 5 steps', su_sub: 'You can stop and continue any time.', nextStep: 'Next step', allSteps: 'All steps',
+    su_title: 'Open your shop in 6 steps', su_sub: 'You can stop and continue any time.', nextStep: 'Next step', allSteps: 'All steps',
     su_profile: 'Shop name, logo & description', su_profileN: 'So buyers recognise you', su_profileW: 'Add a clear logo and a short description of what you sell. You can change it later.', su_profileC: 'Add logo & description',
     su_kyc: 'Identity check', su_kycN: 'ID card or passport photo', su_kycW: 'Only the Phsar team sees your document. It keeps buyers and sellers safe.', su_kycC: 'Upload my ID',
     su_pickup: 'Pickup point', su_pickupN: 'Where the courier collects your packages', su_pickupW: 'Put the pin exactly at your door so the Phsar courier can find you.', su_pickupC: 'Set my pickup point',
     su_submit: 'Send for review', su_submitN: 'Phsar checks everything in 1–2 working days', su_submitW: 'Everything is filled in. Send your shop to Phsar for checking.', su_submitC: 'Send for review',
-    su_review: 'Approved by Phsar', su_reviewN: 'Then you can start selling',
+    su_review: 'Approved by Phsar', su_reviewN: 'Then you can start selling', su_signup: 'Sign up', su_signupN: 'Your Phsar account', su_store: 'Create your store', su_storeN: 'Name and what you sell', sw_step: 'Step {a} of {b}', sw_guide: 'Setup guide', sw_doneT: 'This step is done', sw_doneB: 'Great! Continue with the next step.', sw_next: 'Next: {s}', sw_send: 'Send my store for review', sw_sentT: 'Store sent for review', sw_sentB: 'Phsar will check it and notify you. Meanwhile you can prepare products as drafts.',
     su_waitT: 'Phsar is checking your shop', su_waitW: 'This usually takes 1–2 working days. We will send you a notification. Meanwhile you can prepare products.', su_waitC: 'Prepare a product',
     su_min: '~{n} min', su_done: 'Done', su_todo: 'To do', su_wait: 'Waiting',
     su_extra: 'You can also prepare now', su_bank: 'Bank account', su_bankN: 'So Phsar can pay you', su_prod: 'First product (draft)', su_prodN: 'It goes live after your shop is approved',
@@ -64,12 +64,12 @@ addStrings({
     tipTitle: 'គន្លឹះប្រចាំថ្ងៃ',
     tips: ['ឆ្លើយអ្នកទិញឱ្យលឿន — ហាងដែលឆ្លើយលឿនត្រូវបានបង្ហាញខ្ពស់ក្នុងការស្វែងរក។', 'ផលិតផលដែលមានវីដេអូច្បាស់លក់ដាច់ជាងច្រើន។ បង្ហាញទំនិញនៅក្នុងដៃ។', 'ទទួលការបញ្ជាទិញឱ្យលឿន។ ការយឺត ឬបដិសេធធ្វើឱ្យពិន្ទុហាងធ្លាក់។'],
     staffHome: 'អ្នកកំពុងជួយហាងនេះជាបុគ្គលិក។ អ្នកអាចគ្រប់គ្រងការបញ្ជាទិញ ការប្តូរ/សង និងផលិតផល។',
-    su_title: 'បើកហាងក្នុង 5 ជំហាន', su_sub: 'អាចឈប់ ហើយបន្តពេលណាក៏បាន។', nextStep: 'ជំហានបន្ទាប់', allSteps: 'ជំហានទាំងអស់',
+    su_title: 'បើកហាងក្នុង 6 ជំហាន', su_sub: 'អាចឈប់ ហើយបន្តពេលណាក៏បាន។', nextStep: 'ជំហានបន្ទាប់', allSteps: 'ជំហានទាំងអស់',
     su_profile: 'ឈ្មោះហាង ឡូហ្គោ និងការពិពណ៌នា', su_profileN: 'ដើម្បីឱ្យអ្នកទិញស្គាល់អ្នក', su_profileW: 'បន្ថែមឡូហ្គោច្បាស់ និងការពិពណ៌នាខ្លីអំពីអ្វីដែលអ្នកលក់។ អាចប្តូរពេលក្រោយ។', su_profileC: 'បន្ថែមឡូហ្គោ និងការពិពណ៌នា',
     su_kyc: 'ផ្ទៀងផ្ទាត់អត្តសញ្ញាណ', su_kycN: 'រូបថតអត្តសញ្ញាណប័ណ្ណ ឬលិខិតឆ្លងដែន', su_kycW: 'មានតែក្រុម Phsar ដែលមើលឃើញឯកសារ។ ដើម្បីសុវត្ថិភាពអ្នកទិញ និងអ្នកលក់។', su_kycC: 'ផ្ទុកអត្តសញ្ញាណប័ណ្ណ',
     su_pickup: 'ទីតាំងទទួលកញ្ចប់', su_pickupN: 'កន្លែងអ្នកដឹកមកយកកញ្ចប់', su_pickupW: 'ដាក់ម្ជុលត្រង់ទ្វារហាង ដើម្បីឱ្យអ្នកដឹក Phsar រកឃើញ។', su_pickupC: 'កំណត់ទីតាំងទទួល',
     su_submit: 'ផ្ញើឱ្យត្រួតពិនិត្យ', su_submitN: 'Phsar ពិនិត្យក្នុង 1–2 ថ្ងៃធ្វើការ', su_submitW: 'បានបំពេញគ្រប់យ៉ាង។ ផ្ញើហាងទៅ Phsar ដើម្បីពិនិត្យ។', su_submitC: 'ផ្ញើឱ្យត្រួតពិនិត្យ',
-    su_review: 'Phsar បានអនុម័ត', su_reviewN: 'បន្ទាប់មកអ្នកអាចចាប់ផ្តើមលក់',
+    su_review: 'Phsar បានអនុម័ត', su_reviewN: 'បន្ទាប់មកអ្នកអាចចាប់ផ្តើមលក់', su_signup: 'ចុះឈ្មោះ', su_signupN: 'គណនី Phsar របស់អ្នក', su_store: 'បង្កើតហាង', su_storeN: 'ឈ្មោះ និងអ្វីដែលអ្នកលក់', sw_step: 'ជំហាន {a} នៃ {b}', sw_guide: 'មគ្គុទ្ទេសក៍បើកហាង', sw_doneT: 'ជំហាននេះរួចរាល់', sw_doneB: 'ល្អណាស់! បន្តជំហានបន្ទាប់។', sw_next: 'បន្ទាប់៖ {s}', sw_send: 'ផ្ញើហាងរបស់ខ្ញុំឱ្យពិនិត្យ', sw_sentT: 'បានផ្ញើហាងឱ្យពិនិត្យ', sw_sentB: 'Phsar នឹងពិនិត្យ ហើយជូនដំណឹងទៅអ្នក។ ក្នុងពេលនេះ អ្នកអាចរៀបចំផលិតផលជាសេចក្តីព្រាងបាន។',
     su_waitT: 'Phsar កំពុងពិនិត្យហាងរបស់អ្នក', su_waitW: 'ជាធម្មតា 1–2 ថ្ងៃធ្វើការ។ យើងនឹងផ្ញើការជូនដំណឹង។ ចន្លោះពេលនេះ អ្នកអាចរៀបចំផលិតផល។', su_waitC: 'រៀបចំផលិតផល',
     su_min: '~{n} នាទី', su_done: 'រួចរាល់', su_todo: 'ត្រូវធ្វើ', su_wait: 'កំពុងរង់ចាំ',
     su_extra: 'អាចរៀបចំឥឡូវនេះផងដែរ', su_bank: 'គណនីធនាគារ', su_bankN: 'ដើម្បីឱ្យ Phsar ទូទាត់ជូនអ្នក', su_prod: 'ផលិតផលដំបូង (សេចក្តីព្រាង)', su_prodN: 'បង្ហាញបន្ទាប់ពីហាងត្រូវបានអនុម័ត',
@@ -104,12 +104,12 @@ addStrings({
     tipTitle: '今日小贴士',
     tips: ['尽快回复买家——回复快的店铺在搜索中排名更高。', '有清晰视频的商品成交率高得多。把商品拿在手里展示。', '尽快接单。超时或拒单会降低店铺评分。'],
     staffHome: '你是这家店的员工，可以处理订单、退货和商品。',
-    su_title: '5 步开店', su_sub: '可随时暂停，之后继续。', nextStep: '下一步', allSteps: '全部步骤',
+    su_title: '6 步开店', su_sub: '可随时暂停，之后继续。', nextStep: '下一步', allSteps: '全部步骤',
     su_profile: '店名、标志和介绍', su_profileN: '让买家认出你', su_profileW: '上传清晰的标志，并简单介绍你卖什么。之后可以修改。', su_profileC: '添加标志和介绍',
     su_kyc: '身份验证', su_kycN: '身份证或护照照片', su_kycW: '证件仅 Phsar 团队可见，保障买卖双方安全。', su_kycC: '上传证件',
     su_pickup: '取件点', su_pickupN: '快递员取件的地方', su_pickupW: '把定位放在店门口，方便 Phsar 快递员找到你。', su_pickupC: '设置取件点',
     su_submit: '提交审核', su_submitN: 'Phsar 会在 1–2 个工作日内审核', su_submitW: '资料已填写完整，提交给 Phsar 审核。', su_submitC: '提交审核',
-    su_review: 'Phsar 审核通过', su_reviewN: '之后就可以开始销售',
+    su_review: 'Phsar 审核通过', su_reviewN: '之后就可以开始销售', su_signup: '注册', su_signupN: '你的 Phsar 账户', su_store: '创建店铺', su_storeN: '店名和经营内容', sw_step: '第 {a} 步，共 {b} 步', sw_guide: '开店指南', sw_doneT: '这一步已完成', sw_doneB: '很好！继续下一步。', sw_next: '下一步：{s}', sw_send: '提交店铺审核', sw_sentT: '店铺已提交审核', sw_sentB: 'Phsar 审核后会通知你。在此期间你可以先把商品存为草稿。',
     su_waitT: 'Phsar 正在审核你的店铺', su_waitW: '通常需要 1–2 个工作日，结果会通知你。现在可以先准备商品。', su_waitC: '准备商品',
     su_min: '约 {n} 分钟', su_done: '已完成', su_todo: '待完成', su_wait: '等待中',
     su_extra: '现在也可以准备', su_bank: '银行账户', su_bankN: '用于 Phsar 给你打款', su_prod: '第一个商品（草稿）', su_prodN: '店铺通过审核后上架',
@@ -251,15 +251,8 @@ async function drawSetup(id) {
     return;
   }
   const sent = st.status === 'pending_review';
-  const kycOk = c.kyc === 'pending' || c.kyc === 'verified';
-  const steps = [
-    {k: 'profile', done: c.logo && c.about, min: 2, go: "v2Open('profile')"},
-    {k: 'kyc', done: kycOk, min: 3, go: "v2Open('kyc')", note: c.kyc && c.kyc !== 'missing' ? t('kyc_' + c.kyc) : ''},
-    {k: 'pickup', done: c.pickup_points > 0, min: 3, go: "v2Open('pickup')"},
-    {k: 'submit', done: sent, min: 1, go: 'setupSubmit()'},
-    {k: 'review', done: false, wait: sent},
-  ];
-  const done = steps.filter(s => s.done).length;
+  const steps = setupSteps(st);
+  const done = steps.filter(s => s.done && s.n).length;
   const next = steps.find(s => !s.done);
   let nextHTML;
   if (next.k === 'review') {
@@ -274,12 +267,12 @@ async function drawSetup(id) {
   const row = (s, i) => {
     const isNext = s === next;
     const chip = s.done ? `<span class="chip ok">${t('su_done')}</span>` : s.wait ? `<span class="chip warn">${t('su_wait')}</span>` : `<span class="chip ${isNext ? 'pink' : ''}">${t('su_todo')}</span>`;
-    const inner = `<span class="n" aria-hidden="true">${s.done ? '✓' : i + 1}</span><span class="sx"><b>${t('su_' + s.k)}</b><span>${esc(s.note || t('su_' + s.k + 'N'))}</span></span>${chip}`;
+    const inner = `<span class="n" aria-hidden="true">${s.done ? '✓' : s.n || '⏳'}</span><span class="sx"><b>${t('su_' + s.k)}</b><span>${esc(s.note || t('su_' + s.k + 'N'))}</span></span>${chip}`;
     return s.go && s.k !== 'submit' ? `<a class="step ${s.done ? 'done' : isNext ? 'next' : ''}" href="#" onclick="event.preventDefault();${s.go}">${inner}</a>`
       : `<div class="step ${s.done ? 'done' : isNext ? 'next' : ''}">${inner}</div>`;
   };
   $('#tab').innerHTML = `
-    <div class="v2head"><div class="ring" style="--p:${done * 20}%" role="img" aria-label="${done}/5"><span>${done}/5</span></div>
+    <div class="v2head"><div class="ring" style="--p:${Math.round(done * 100 / 6)}%" role="img" aria-label="${done}/6"><span>${done}/6</span></div>
       <div><h1>${t('su_title')}</h1><p class="sub">${t('su_sub')}</p></div></div>
     ${st.review_note && !sent ? `<div class="banner bad"><b>${t('needsFix')}</b> ${esc(st.review_note)}</div>` : ''}
     ${nextHTML}
@@ -292,8 +285,47 @@ async function drawSetup(id) {
   if ($('#suGo')) $('#suGo').onclick = () => { if (next.k === 'submit') setupSubmit(); else v2Open(next.k); };
 }
 
+// Langkah menjadi seller — sama di halaman login, buat toko, panduan, dan tiap halaman langkah (6 langkah + menunggu).
+function setupSteps(st) {
+  const c = st.checklist || {}, sent = st.status === 'pending_review';
+  return [
+    {k: 'signup', n: 1, done: true},
+    {k: 'store', n: 2, done: true},
+    {k: 'profile', n: 3, done: !!(c.logo && c.about), min: 2, go: "v2Open('profile')"},
+    {k: 'kyc', n: 4, done: c.kyc === 'pending' || c.kyc === 'verified', min: 3, go: "v2Open('kyc')", note: c.kyc && c.kyc !== 'missing' ? t('kyc_' + c.kyc) : ''},
+    {k: 'pickup', n: 5, done: c.pickup_points > 0, min: 3, go: "v2Open('pickup')"},
+    {k: 'submit', n: 6, done: sent, min: 1, go: 'setupSubmit()'},
+    {k: 'review', done: false, wait: sent},
+  ];
+}
+
+// Halaman langkah (profil / KYC / titik jemput) saat toko belum dikirim: judul "Langkah 3 dari 6", bar progres,
+// penjelasan singkat, dan setelah selesai tombol besar ke langkah berikutnya.
+const SETUP_TABS = ['profile', 'kyc', 'pickup'];
+function inSetup(st, tab) { return st.status === 'onboarding' && st.role === 'owner' && SETUP_TABS.includes(tab); }
+function setupHead(st, tab) {
+  const steps = setupSteps(st), cur = steps.find(x => x.k === tab);
+  const bar = steps.filter(x => x.n).map(x => `<i class="${x.done ? 'done' : x.k === tab ? 'on' : ''}"></i>`).join('');
+  return `<a class="backlink big" href="#/store/${st.id}/home" onclick="event.preventDefault();v2Open('home')">← ${t('sw_guide')}</a>
+    <div class="swhead"><p class="muted" style="font-weight:700">${t('sw_step', {a: cur.n, b: 6})}</p>
+      <h1>${t('su_' + tab)}</h1><div class="swbar" aria-hidden="true">${bar}</div><p class="swhint">${t('su_' + tab + 'W')}</p></div>`;
+}
+function setupNext(st, tab) {
+  const steps = setupSteps(st), cur = steps.find(x => x.k === tab);
+  if (!cur || !cur.done) return '';
+  const next = steps.find(x => x.n && !x.done);
+  const btn = !next ? '' : next.k === 'submit'
+    ? `<button type="button" class="primary" onclick="setupSubmit()" ${st.checklist?.can_submit ? '' : 'disabled'}>${t('sw_send')} →</button>`
+    : `<button type="button" class="primary" onclick="v2Open('${next.k}')">${t('sw_next', {s: t('su_' + next.k)})} →</button>`;
+  return `<section class="swnext" id="swNext"><div><b>✓ ${t('sw_doneT')}</b><span>${t('sw_doneB')}</span></div>${btn}</section>`;
+}
+
 async function setupSubmit() {
-  try { await api(`/v1/seller/stores/${S.storeId}/submit`, {method: 'POST'}); render(); } catch (e) { toast(errMsg(e), 'error'); }
+  try {
+    await api(`/v1/seller/stores/${S.storeId}/submit`, {method: 'POST'});
+    toast(t('sw_sentT'));
+    v2Open('home');
+  } catch (e) { toast(errMsg(e), 'error'); }
 }
 
 // ---- Lainnya ----
